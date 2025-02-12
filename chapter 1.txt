@@ -1,0 +1,72 @@
+PRIYANKA P (ID:24007)
+SOURCE: THE C PROGRAMMING LANGUAGE
+AUTHOR: DENNIM.M.RITCHIE & BRIAN.W.KERNIGHAN
+DATE: 12.2.25
+
+CHAPTER 1:
+main(): execution begins from here 
+Without arguments:
+int main(){
+return 0;
+}
+It is the standard form - ISO C99
+Return 0 - normal or successful termination
+Return (non zero) - erroneous termination
+
+With arguments: int main(int argc, char * argv[])
+
+Main calls printf function to print seq of characters
+Printf is a standard library function. It is not a part of c language. Should include <stdio.h> library
+ 
+Implicit Declaration: occurs when a fn or variable is used without being declared first.
+
+Comment: Used to describe the code or naming (/* */).
+
+Range of int and float depends on machine
+
+Indendation: emphasizes logical structure of program
+
+PROBLEM OF TRUNCATION:
+Eg: fahrenheit to celsius conversion:
+c=(5/9)*(f-32);
+(5/9) truncated to zero hence c=0;
+
+2 fixes:
+Use floating point to get more accuracy.
+c and f in float type
+c=(5.0/9.0)*(f-32.0)
+Learnt how to do right justification:
+Eg %3d ,%6.1f
+
+Define: defines a symbolic constant
+#define name replacement list
+
+Difference between putchar and printf: 
+Printf returns number of characters in the formatted string whereas putchar returns single character.
+Solved exercise problems:
+Copying sentence, char count, word count, line count.
+Exercise 1-11. How would you test the word count program? What kinds of input are most likely to uncover bugs if there are any? 
+Empty, single word, multiple word along with tab, backspaces newlines, white spaces, etc.
+
+Arrays: 
+Solved histogram problem
+
+Functions: 
+It should be defined. If we are using the fn before definition it should be declared.
+Declaration- function prototype.
+
+Arguments :
+call by value:
+a copy of the actual parameter is passed to the function. Changes made inside the function do not affect the original variable.
+Call by reference:
+the actual memory address (pointer) of the variable is passed, so changes affect the original variable.
+
+Storage classes:
+Auto Variable: Inside a function. Default value is garbage value. Cant be accessed outside function.
+
+Extern variable: global access. Default value is zero. Can be accessed throughout the program. But the variable can be changed by anybody and also it is not encapsulated.
+
+Also solved exercise problems from chapter 1.
+
+
+ 
