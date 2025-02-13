@@ -1,0 +1,49 @@
+Exercise 1-1. Run the ``hello, world'' program on your system. Experiment with leaving out
+parts of the program, to see what error messages you get.
+  
+//1
+#include <stdio.h>
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}
+No Error.
+//2
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}
+incompatible implicit declaration of built-in function ‘printf’
+
+//3
+#include <stdio.h>
+{
+    printf("Hello, World!\n");
+    return 0;
+}
+ error: expected identifier or ‘(’ before ‘{’ token
+ {
+
+//4
+#include <stdio.h>
+int main() {
+    printf("Hello, World!\n")
+    return 0;
+}
+error: expected ‘;’ before ‘return’
+
+//5
+#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\n");
+    return 1;
+}
+===Code Exited With Errors ===
+//6
+
+#include<stdio.h>
+main() {
+    printf("Hello, World!\n");   
+}
+warning: return type defaults to ‘int’
