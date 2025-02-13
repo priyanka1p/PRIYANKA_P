@@ -1,0 +1,11 @@
+//Verify that the expression getchar() != EOF is 0 or 1.
+#include <stdio.h>
+int main() {
+    int c;
+    c=getchar();
+    printf("verifying getchar() != EOF id 1 or 0 is %d",(c!=EOF));
+    return 0;
+}
+// output
+//g
+//verifying getchar() != EOF id 1 or 0 is 1
