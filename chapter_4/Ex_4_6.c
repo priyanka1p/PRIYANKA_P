@@ -10,13 +10,12 @@ double vars[MAXVARS];
 double last_value = 0; 
 
 double evaluate(char var, double value) {
-    if (var == '_') 
-        return last_value;
+    
     if (isalpha(var)) {
         vars[var - 'a'] = value;
         return value;
     }
-    return value;
+    
 }
 
 int main() {
