@@ -1,0 +1,29 @@
+man<command>  -to understand about other commands
+ls  -Lists directory contents
+mkdir foldername1 foldername2  -create directory
+mkdir -p  one/first  - can create multiple nested folders/directory
+cd foldername  -change directory
+cd ~  -moves to root directory
+cd     -cd (2TABs)lists all directories.
+cd D    - cd D(2TABs) lists all directories with name starting with D
+pwd  -print name of current/working directory
+cd ../foldername  -move from one folder to another folder which are present in same directory.
+rmdir foldername  - if empty, removes dir successfully
+rm -rf foldername1 foldername2
+rmdir -r directory_path  -removes dir with its content.
+rm filename - removes files.
+touch newfile.txt  -creates a file
+touch newfile{1..5}  - creates multiple files with names like newfile1, newfile2, etc.
+nano filename.txt  -create file through editor.
+cat filename  - shows the content in file
+cp filename destiination_path -copy file to destination address.
+mv filename destination_path  - moves file to destination address.
+find ~-name "filename"  - it returns the path for the filename.
+find . -name '*filetype'  - it prints the relative path of each file.
+find folder1 folder2 -name filename.txt  -to search under multiple root trees.
+find ~/Documents/foldername -name "*.filetype"  -this will return all (eg .txt) txt files in the current folder.
+ls *c - this will return all (eg .txt) txt files in the current folder.
+mv oldfilename newfilename - rename a file
+open filenamne  -open a file in text editor
+open foldername  - open folders 
+open .  - to open current directory
