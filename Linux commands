@@ -27,3 +27,4 @@ mv oldfilename newfilename - rename a file
 open filenamne  -open a file in text editor
 open foldername  - open folders 
 open .  - to open current directory
+git clone repository_link
