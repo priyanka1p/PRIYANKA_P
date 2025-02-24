@@ -28,3 +28,16 @@ open filenamne  -open a file in text editor
 open foldername  - open folders 
 open .  - to open current directory
 git clone repository_link
+git status - to know the status of the modified file
+   >Changes not staged for commit
+ git add filename
+ git status
+   >Changes to be committed:
+ git commit -m "Updated Linux commands with new commands"
+ git status
+   >Your branch is ahead of 'origin/main' by 1 commit.
+    (use "git push" to publish your local commits)
+git push origin main
+git status
+   >Your branch is up to date with 'origin/main'.
+
