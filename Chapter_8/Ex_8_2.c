@@ -1,22 +1,24 @@
-include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
+/*Rewrite fopen and _fillbuf with fields instead of explicit bit operations.
+Compare code size and execution speed.*/
+#include <stdio.h>  
+#include <fcntl.h>  
+#include <unistd.h>  
+#include <stdlib.h>  
 
 #define BUFFER_SIZE 1024
 #define OPEN_MAX 20  
 #define PERMS 0666  
 
 typedef struct _iobuf {
-    int cnt;
-    char *ptr;
-    char *base;
-    int fd;
-    int is_read;
-    int is_write;
-    int is_unbuf;
-    int is_eof;
-    int is_err;
+    int cnt;        
+    char *ptr;     
+    char *base;     
+    int fd;         
+    int is_read;    
+    int is_write;   
+    int is_unbuf;   
+    int is_eof;     
+    int is_err;     
 } FILEX;
 
 static FILEX _iob[OPEN_MAX] = {
@@ -39,7 +41,7 @@ FILEX *fopenx(char *name, char *mode) {
         return NULL;
 
     for (int i = 0; i < OPEN_MAX; i++) {
-        if (_iob[i].fd == -1) {
+        if (_iob[i].fd == -1) {  
             fp = &_iob[i];
             break;
         }
@@ -84,17 +86,16 @@ int _fillbuf(FILEX *fp) {
 
     bufsize = (fp->is_unbuf) ? 1 : BUFFER_SIZE;
 
-    if (fp->base == NULL) {
+    if (fp->base == NULL) { 
         if ((fp->base = (char *) malloc(bufsize)) == NULL)
-            return EOF;
+            return EOF;  
     }
-    printf("fill   fp   sec   %p\n",fp);
     fp->ptr = fp->base;
     fp->cnt = read(fp->fd, fp->ptr, bufsize);
 
-    printf("Reading %d bytes\n", fp->cnt);  // Debugging output
+    printf("Reading %d bytes\n", fp->cnt);  
 
-    if (--fp->cnt < 0) {
+    if (--fp->cnt < 0) {  
         if (fp->cnt == -1)
             fp->is_eof = 1;
         else
@@ -114,24 +115,18 @@ int _flushbuf(int x, FILEX *fp) {
         return EOF;
 
     bufsize = (fp->is_unbuf) ? 1 : BUFFER_SIZE;
-    printf("flush   fp   sec   %p\n",fp);
-    printf("flush   ptr   sec   %p\n",fp->ptr);
-    printf("flush   base  sec   %p\n",fp->base);
-    if (fp->base == NULL) {
-        if ((fp->base = (char *) malloc(bufsize)) == NULL)
-            return EOF;
-    } else {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  1,1           Top
 
-num_written = write(fp->fd, fp->base, fp->ptr - fp->base);
-       printf("num writteb    %d\n",num_written);
+    if (fp->base == NULL) {  
+        if ((fp->base = (char *) malloc(bufsize)) == NULL)
+            return EOF;  
+    } else {
+        num_written = write(fp->fd, fp->base, fp->ptr - fp->base);
        if (num_written != fp->ptr - fp->base) {
             fp->is_err = 1;
             return EOF;
         }
     }
-    printf("flush   ptr   sec   %ld\n",fp->ptr-fp->base);
-    printf("flush   base  sec   %p\n",fp->base);
+
     fp->ptr = fp->base;
     fp->cnt = bufsize - 1;
     *fp->ptr++ = x;
@@ -180,7 +175,7 @@ int main(int argc, char *argv[]) {
     FILEX *fp;
     int c;
 
-    init_iob();
+    init_iob();  
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
@@ -191,16 +186,15 @@ int main(int argc, char *argv[]) {
     if (fp == NULL) {
         return 1;
     }
-
+  
     while ((c = getcx(fp)) != EOF) {
-        printf("Read character: %c\n", c);
         putcharx(c);
     }
 
-    fflushx(&_iob[1]);
+    fflushx(&_iob[1]); 
 
     fclosex(fp);
     return 0;
 }
-
-                                                                
+/*Debugging is easier with fp->is_read instead of fp->flags & _READ
+Hello World!*?
