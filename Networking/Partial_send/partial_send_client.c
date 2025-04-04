@@ -74,3 +74,6 @@ int main() {
     close(sockfd);
     return 0;
 }
+Connected to server!
+Sent chunk: 1048575 bytes (Total: 1048575 bytes)
+Successfully sent 1048575 bytes to server.
