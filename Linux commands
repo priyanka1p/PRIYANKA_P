@@ -44,3 +44,7 @@ git status
 vim commands:
 to comment multiple lines- go to visual mode(shift+v), then enter :'<,'>s/^/\/\//
 to uncommet multiple lines of code- in visual mode, enter:'<,'>s/^\/\///
+to uncomment few lines with spaces in trailing and leading end, enter:'<,'>s/^\s*\/\/\s\?//
+   ^\s* → matches any number of spaces or tabs at the beginning of the line.
+   \/\/ → matches the // itself.
+   \s\? → removes one optional space after the //
