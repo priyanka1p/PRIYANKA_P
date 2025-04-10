@@ -41,3 +41,6 @@ git push origin main
 git status
    >Your branch is up to date with 'origin/main'.
 
+vim commands:
+to comment multiple lines- go to visual mode(shift+v), then enter :'<,'>s/^/\/\//
+to uncommet multiple lines of code- in visual mode, enter:'<,'>s/^\/\///
