@@ -48,3 +48,5 @@ to uncomment few lines with spaces in trailing and leading end, enter:'<,'>s/^\s
    ^\s* → matches any number of spaces or tabs at the beginning of the line.
    \/\/ → matches the // itself.
    \s\? → removes one optional space after the //
+curl - curl stands for Client URL and is a more flexible tool designed for making various kinds of requests to servers and handling different protocols.
+wget - wget stands for Web Get and is a more straightforward tool designed primarily for downloading files over HTTP, HTTPS, and FTP. It’s often used for recursive downloads and simple file retrieval tasks.
