@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSocket Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    #chat {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #messages {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    #sendBtn {
+      padding: 10px;
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #userSelect {
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="chat">
+  <h2>WebSocket Chat</h2>
+  <select id="userSelect">
+    <option value="all">Public</option>
+  </select>
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Type your message" />
+  <button id="sendBtn">Send</button>
+</div>
+
+<script>
+  const ws = new WebSocket("ws://" + location.hostname + ":8080");
+  const messages = document.getElementById("messages");
+  const messageInput = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const userSelect = document.getElementById("userSelect");
+
+  let username = "";
+
+  function appendMessage(msg) {
+    const div = document.createElement("div");
+    div.innerText = msg;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  ws.onopen = () => {
+    username = prompt("Enter your username:");
+    if (!username) username = "Anonymous";
+    ws.send(username);
+
+    // Replace chat title with username
+    document.querySelector("#chat h2").innerText = username;
+    document.title = username;
+  };
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "userlist") {
+      const current = userSelect.value;
+      userSelect.innerHTML = '<option value="all">Public</option>';
+      data.users.forEach(user => {
+        if (user !== username) {
+          const option = document.createElement("option");
+          option.value = user;
+          option.innerText = user;
+          userSelect.appendChild(option);
+        }
+      });
+      userSelect.value = current;
+    }
+
+    if (data.type === "message") {
+      const who = data.from === username ? "me" : data.from;
+      const to = data.to !== "all" ? ` ➜ ${data.to}` : "";
+      appendMessage(`${who}${to}: ${data.message}`);
+    }
+  };
+
+  sendBtn.onclick = () => {
+    const msg = messageInput.value.trim();
+    if (msg) {
+      const to = userSelect.value;
+      const payload = {
+        type: "message",
+        from: username,
+        to: to,
+        message: msg
+      };
+      ws.send(JSON.stringify(payload));
+      messageInput.value = "";
+    }
+  };
+
+  messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendBtn.click();
+  });
+</script>
+
+</body>
+</html>
+
