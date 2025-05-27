@@ -1,131 +1,236 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>WebSocket Chat</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      padding: 20px;
+      margin: 0; padding: 0;
+      display: flex; height: 100vh;
     }
-    #chat {
-      width: 100%;
-      max-width: 600px;
-      margin: auto;
-      background: white;
+
+    #sidebar {
+      width: 200px;
+      background: #f4f4f4;
+      border-right: 1px solid #ccc;
       padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-    #messages {
-      border: 1px solid #ccc;
-      height: 300px;
+
+    #users {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #users li {
+      padding: 8px;
+      cursor: pointer;
+    }
+
+    #users li.selected {
+      background-color: #007bff;
+      color: white;
+    }
+
+    #chat-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-log {
+      flex-grow: 1;
+      padding: 10px;
       overflow-y: auto;
-      padding: 10px;
-      margin-bottom: 10px;
+      border-bottom: 1px solid #ccc;
     }
-    #messageInput {
-      width: 70%;
-      padding: 10px;
-      border: 1px solid #ccc;
+
+    #input-area {
+      display: flex;
     }
-    #sendBtn {
+
+    #message-input {
+      flex-grow: 1;
       padding: 10px;
-      background: #28a745;
+      font-size: 16px;
+      border: none;
+      border-top: 1px solid #ccc;
+    }
+
+    #send-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
       color: white;
       border: none;
       cursor: pointer;
     }
-    #userSelect {
+
+    #send-btn:hover {
+      background: #0056b3;
+    }
+
+    #login-screen {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+    }
+
+    #username-input {
       padding: 10px;
-      border: 1px solid #ccc;
+      font-size: 18px;
+      width: 250px;
       margin-bottom: 10px;
+    }
+
+    #login-btn {
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+
+    .private-msg {
+      color: #d63384;
     }
   </style>
 </head>
 <body>
 
-<div id="chat">
-  <h2>WebSocket Chat</h2>
-  <select id="userSelect">
-    <option value="all">Public</option>
-  </select>
-  <div id="messages"></div>
-  <input type="text" id="messageInput" placeholder="Type your message" />
-  <button id="sendBtn">Send</button>
+<div id="login-screen">
+  <h2>Enter Username</h2>
+  <input id="username-input" placeholder="Username" />
+  <button id="login-btn">Join Chat</button>
+  <p id="login-error" style="color: red;"></p>
+</div>
+
+<div id="sidebar">
+  <h3>Users</h3>
+  <ul id="users">
+    <li data-user="all" class="selected">Public</li>
+  </ul>
+</div>
+
+<div id="chat-container">
+  <div id="chat-log"></div>
+  <div id="input-area">
+    <input id="message-input" placeholder="Type a message..." />
+    <button id="send-btn">Send</button>
+  </div>
 </div>
 
 <script>
-  const ws = new WebSocket("ws://" + location.hostname + ":8080");
-  const messages = document.getElementById("messages");
-  const messageInput = document.getElementById("messageInput");
-  const sendBtn = document.getElementById("sendBtn");
-  const userSelect = document.getElementById("userSelect");
+  let ws;
+  let myUsername = '';
+  let selectedUser = 'all';
 
-  let username = "";
+  function logMessage(from, to, message) {
+    const log = document.getElementById('chat-log');
+    const msgDiv = document.createElement('div');
 
-  function appendMessage(msg) {
-    const div = document.createElement("div");
-    div.innerText = msg;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+    const isPrivate = to !== 'all';
+    msgDiv.innerHTML = `<strong>${from}${isPrivate ? ' ➜ ' + to : ''}:</strong> 
+                        <span class="${isPrivate ? 'private-msg' : ''}">${message}</span>`;
+    log.appendChild(msgDiv);
+    log.scrollTop = log.scrollHeight;
   }
 
-  ws.onopen = () => {
-    username = prompt("Enter your username:");
-    if (!username) username = "Anonymous";
-    ws.send(username);
+  function updateUsers(userList) {
+    const ul = document.getElementById('users');
+    ul.innerHTML = '<li data-user="all" class="' + (selectedUser === 'all' ? 'selected' : '') + '">Public</li>';
 
-    // Replace chat title with username
-    document.querySelector("#chat h2").innerText = username;
-    document.title = username;
-  };
+    userList.forEach(username => {
+      if (username !== myUsername) {
+        const li = document.createElement('li');
+        li.textContent = username;
+        li.dataset.user = username;
+        if (selectedUser === username) li.classList.add('selected');
+        ul.appendChild(li);
+      }
+    });
+  }
 
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+  function connectWebSocket(username) {
+    ws = new WebSocket('ws://' + location.hostname + ':9000');
 
-    if (data.type === "userlist") {
-      const current = userSelect.value;
-      userSelect.innerHTML = '<option value="all">Public</option>';
-      data.users.forEach(user => {
-        if (user !== username) {
-          const option = document.createElement("option");
-          option.value = user;
-          option.innerText = user;
-          userSelect.appendChild(option);
+    ws.onopen = () => {
+      ws.send(username);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'error') {
+        document.getElementById('login-error').textContent = data.message;
+        ws.close();
+        return;
+      }
+
+      if (data.type === 'userlist') {
+        updateUsers(data.users);
+
+        // If selected user is offline, fallback to public
+        const usernames = data.users;
+        if (selectedUser !== 'all' && !usernames.includes(selectedUser)) {
+          selectedUser = 'all';
+          updateUsers(usernames);
         }
-      });
-      userSelect.value = current;
-    }
 
-    if (data.type === "message") {
-      const who = data.from === username ? "me" : data.from;
-      const to = data.to !== "all" ? ` ➜ ${data.to}` : "";
-      appendMessage(`${who}${to}: ${data.message}`);
-    }
+      } else if (data.type === 'message') {
+        logMessage(data.from, data.to, data.message);
+      }
+    };
+
+    ws.onclose = () => {
+      alert('Username already exists. Try a different username. Disconnected from server');
+      location.reload();
+    };
+  }
+
+  document.getElementById('login-btn').onclick = () => {
+    const usernameInput = document.getElementById('username-input');
+    const username = usernameInput.value.trim();
+    if (!username) return;
+
+    myUsername = username;
+    connectWebSocket(username);
+    document.getElementById('login-screen').style.display = 'none';
   };
 
-  sendBtn.onclick = () => {
-    const msg = messageInput.value.trim();
-    if (msg) {
-      const to = userSelect.value;
-      const payload = {
-        type: "message",
-        from: username,
-        to: to,
-        message: msg
-      };
-      ws.send(JSON.stringify(payload));
-      messageInput.value = "";
-    }
+  document.getElementById('send-btn').onclick = () => {
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+    const msg = {
+      type: "message",
+      from: myUsername,
+      to: selectedUser,
+      message: text
+    };
+
+    ws.send(JSON.stringify(msg));
+    input.value = '';
   };
 
-  messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendBtn.click();
+  document.getElementById('users').addEventListener('click', (e) => {
+    if (e.target.tagName === 'LI') {
+      selectedUser = e.target.dataset.user;
+      document.querySelectorAll('#users li').forEach(li => li.classList.remove('selected'));
+      e.target.classList.add('selected');
+    }
+  });
+
+  document.getElementById('message-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('send-btn').click();
+    }
   });
 </script>
 
 </body>
 </html>
-
