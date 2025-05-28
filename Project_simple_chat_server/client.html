@@ -172,6 +172,7 @@
 
       if (data.type === 'userlist') {
         updateUsers(data.users);
+        document.title = `${myUsername}`;
 
         // If selected user is offline, fallback to public
         const usernames = data.users;
