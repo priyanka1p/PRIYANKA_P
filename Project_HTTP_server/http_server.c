@@ -3,196 +3,283 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/epoll.h>
 #include <sys/stat.h>
-#include <sys/types.h>
+#include <errno.h>
+#include <stdbool.h>
 
 #define PORT 8080
-#define BUFFER_SIZE 8192
-#define WEB_ROOT "/var/www"
-#define UPLOAD_DIR "/var/www/uploads"
+#define MAX_EVENTS 1024
+#define BUFFER_SIZE 65536
+#define UPLOAD_DIR "/var/www/uploads/"
+#define WWW_DIR "/var/www/"
+#include <ctype.h>
 
-const char* get_content_type(const char* path) {
-    if (strstr(path, ".html")) return "text/html";
-    if (strstr(path, ".jpg")) return "image/jpeg";
-    if (strstr(path, ".png")) return "image/png";
-    if (strstr(path, ".gif")) return "image/gif";
-    if (strstr(path, ".css")) return "text/css";
-    if (strstr(path, ".js")) return "application/javascript";
-    if (strstr(path, ".pdf")) return "application/pdf";
-    if (strstr(path, ".mp4")) return "video/mp4";
-    if (strstr(path, ".mp3")) return "audio/mpeg";
+// Case-insensitive substring search (like strcasestr)
+char* strcasestr(const char *haystack, const char *needle) {
+    while (*haystack) {
+        const char *h = haystack;//The string you want to search in.
+        const char *n = needle;//substring u want to find
+        
+        while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)) {
+            h++;
+            n++;
+        }
+
+        if (*n == '\0')  // Found the substring
+            return (char*)haystack;
+
+        haystack++;
+    }
+    return NULL;  // Substring not found
+}
+
+
+typedef struct {
+    int fd;
+    char buffer[BUFFER_SIZE];//store incoming data
+    int received;
+    int content_length;
+    bool header_parsed;
+} client_ctx;
+
+client_ctx clients[MAX_EVENTS] = {0};
+
+void set_nonblocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+client_ctx* get_client(int fd) {
+    for (int i = 0; i < MAX_EVENTS; ++i)
+        if (clients[i].fd == fd) return &clients[i];
+    return NULL;
+}
+
+client_ctx* create_client(int fd) {
+    for (int i = 0; i < MAX_EVENTS; ++i) {
+        if (clients[i].fd == 0) {
+            clients[i].fd = fd;
+            clients[i].received = 0;
+            clients[i].content_length = -1;
+            clients[i].header_parsed = false;
+            return &clients[i];
+        }
+    }
+    return NULL;
+}
+
+void remove_client(int fd) {
+    for (int i = 0; i < MAX_EVENTS; ++i)
+        if (clients[i].fd == fd) clients[i].fd = 0;
+}
+
+const char* get_mime_type(const char* path) {
+    const char* ext = strrchr(path, '.');
+    if (!ext) return "text/plain";
+    if (strcmp(ext, ".html") == 0) return "text/html";
+    if (strcmp(ext, ".jpg") == 0) return "image/jpeg";
+    if (strcmp(ext, ".png") == 0) return "image/png";
+    if (strcmp(ext, ".gif") == 0) return "image/gif";
+    if (strcmp(ext, ".css") == 0) return "text/css";
+    if (strcmp(ext, ".js") == 0) return "application/javascript";
+    if (strcmp(ext, ".pdf") == 0) return "application/pdf";
     return "application/octet-stream";
 }
 
-void save_uploaded_file(const char* boundary, const char* body, const char* end) {
-    const char* file_start = strstr(body, "\r\n\r\n");
-    if (!file_start) return;
-    file_start += 4;
-
-    const char* file_end = strstr(file_start, boundary);
-    if (!file_end) return;
-
-    const char* filename_marker = strstr(body, "filename=\"");
-    if (!filename_marker) return;
-    filename_marker += 10;
-    const char* filename_end = strchr(filename_marker, '"');
-    if (!filename_end) return;
-
-    char filename[256];
-    snprintf(filename, filename_end - filename_marker + 1, "%s", filename_marker);
-
-    char filepath[512];
-    snprintf(filepath, sizeof(filepath), "%s/%s", UPLOAD_DIR, filename);
-
-    FILE* fp = fopen(filepath, "wb");
-    if (fp) {
-        fwrite(file_start, 1, file_end - file_start - 2, fp); // -2 to remove \r\n
-        fclose(fp);
-        printf("Saved file: %s\n", filepath);
-    } else {
-        perror("File write failed");
-    }
+void send_404(int client_fd) {
+    const char* msg = "HTTP/1.1 404 Not Found\r\nContent-Length: 13\r\n\r\n404 Not Found";
+    send(client_fd, msg, strlen(msg), 0);
 }
 
-void handle_client(int client_fd, struct sockaddr_in client_addr) {
-    char buffer[BUFFER_SIZE];
-    int bytes = read(client_fd, buffer, sizeof(buffer) - 1);
-    if (bytes <= 0) {
-        close(client_fd);
-        return;
+void handle_file_upload(const char* buffer) {
+	
+    const char* filename_pos = strstr(buffer, "filename=\"");
+    if (!filename_pos) return;
+    filename_pos += 10;
+    const char* filename_end = strchr(filename_pos, '"');
+    if (!filename_end) return;
+
+    char filename[256] = {0};
+    strncpy(filename, filename_pos, filename_end - filename_pos);
+
+    const char* content_start = strstr(filename_end, "\r\n\r\n");
+    if (!content_start) return;
+    content_start += 4;
+
+    const char* boundary = strstr(buffer, "\r\n--");
+    const char* content_end = boundary ? strstr(content_start, boundary) : NULL;
+    int content_len = content_end ? content_end - content_start : strlen(content_start);
+
+    char filepath[512];
+    snprintf(filepath, sizeof(filepath), "%s%s", UPLOAD_DIR, filename);
+    FILE* fp = fopen(filepath, "wb");
+    if (fp) {
+        fwrite(content_start, 1, content_len, fp);
+        fclose(fp);
     }
-
-    buffer[bytes] = '\0';
-
-    char method[16], path_raw[2048], protocol[16];
-    sscanf(buffer, "%15s %2047s %15s", method, path_raw, protocol);
-
-    if (strcmp(method, "GET") == 0) {
-        char path[8192];
-        if (strcmp(path_raw, "/") == 0) {
-            snprintf(path, sizeof(path), "%s/index.html", WEB_ROOT);
-        } else {
-            snprintf(path, sizeof(path), "%s%s", WEB_ROOT, path_raw);
-        }
-
-        FILE* file = fopen(path, "rb");
-        if (!file) {
-            const char* not_found = "HTTP/1.0 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile not found.\n";
-            send(client_fd, not_found, strlen(not_found), 0);
-        } else {
-            fseek(file, 0, SEEK_END);
-            long filesize = ftell(file);
-            rewind(file);
-
-            const char* content_type = get_content_type(path);
-            char header[512];
-            snprintf(header, sizeof(header),
-                     "HTTP/1.0 200 OK\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
-                     content_type, filesize);
-            send(client_fd, header, strlen(header), 0);
-
-            size_t n;
-            while ((n = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-                send(client_fd, buffer, n, 0);
-            }
-
-            fclose(file);
-        }
-
-    } else if (strcmp(method, "POST") == 0) {
-        const char* content_type_header = strstr(buffer, "Content-Type: ");
-        if (!content_type_header) {
+}
+void post_data(const char* buffer,int client_fd,int body_len){
+	const char* content_length_header = strstr(buffer, "\r\n\r\n");
+        if (!content_length_header) {
+            printf("Missing Content-Length\n");
             close(client_fd);
             return;
         }
+        const char* body_start =  content_length_header+ 4;
+	char body[256] = {0};
+    	strncpy(body, body_start, body_len);
+        
 
-        if (strstr(content_type_header, "multipart/form-data")) {
-            const char* boundary_marker = strstr(content_type_header, "boundary=");
-            if (!boundary_marker) {
-                close(client_fd);
-                return;
+	FILE* f = fopen(UPLOAD_DIR "/form_data.txt", "a");
+            if (f) {
+                fprintf(f, "%s\n", body);
+                fclose(f);
             }
 
-            char boundary[100];
-            sscanf(boundary_marker, "boundary=%99s", boundary);
-            char real_boundary[120] = "--";
-            strcat(real_boundary, boundary);
-
-            char* body_start = strstr(buffer, "\r\n\r\n");
-            if (!body_start) {
-                close(client_fd);
-                return;
-            }
-
-            body_start += 4;
-            save_uploaded_file(real_boundary, body_start, buffer + bytes);
-
-            const char* ok_response = "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nFile uploaded successfully.\n";
-            send(client_fd, ok_response, strlen(ok_response), 0);
-
-        } else if (strstr(content_type_header, "application/x-www-form-urlencoded")) {
-            char* body = strstr(buffer, "\r\n\r\n");
-            if (body) {
-                body += 4;
-                printf("Form data received: %s\n", body);
-
-                char response[1024];
-                snprintf(response, sizeof(response),
-                         "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nReceived POST data:\n%s\n", body);
-                send(client_fd, response, strlen(response), 0);
-            }
-        } else {
-            const char* unsupported = "HTTP/1.0 415 Unsupported Media Type\r\nContent-Type: text/plain\r\n\r\nUnsupported Content-Type.\n";
-            send(client_fd, unsupported, strlen(unsupported), 0);
+            char response[1024];
+            snprintf(response, sizeof(response),
+                     "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nReceived POST data:\n%s\n", body);
+            send(client_fd, response, strlen(response), 0);
+            printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n");
         }
+        
+       
 
+void serve_file(int client_fd, const char* path) {
+    char fullpath[512];
+    printf("path: %s\n",path);
+    snprintf(fullpath, sizeof(fullpath), "%s%s", WWW_DIR, path[1] ? path + 1 : "index.html");
+
+    FILE* fp = fopen(fullpath, "rb");
+    if (!fp) return send_404(client_fd);
+
+    fseek(fp, 0, SEEK_END);
+    long filesize = ftell(fp);
+    rewind(fp);
+
+    char* filedata = malloc(filesize);
+    fread(filedata, 1, filesize, fp);
+    fclose(fp);
+
+    const char* mime = get_mime_type(fullpath);
+    char header[512];
+    snprintf(header, sizeof(header),
+        "HTTP/1.1 200 OK\r\nContent-Length: %ld\r\nContent-Type: %s\r\n\r\n",
+        filesize, mime);
+    send(client_fd, header, strlen(header), 0);
+    send(client_fd, filedata, filesize, 0);
+    free(filedata);
+}
+
+void handle_request(int client_fd,int body_len) {
+    client_ctx* ctx = get_client(client_fd);
+    if (!ctx) return;
+
+    char* buffer = ctx->buffer;
+    printf("buffer: %s\n",buffer);
+    printf("****#######################**\n");
+    if (strncmp(buffer, "GET ", 4) == 0) {
+        char path[1024];
+        sscanf(buffer, "GET %s", path);
+        serve_file(client_fd, path);
+    } else if (strncmp(buffer, "POST ", 5) == 0) {
+        if (strstr(buffer, "multipart/form-data")) {
+            handle_file_upload(buffer);
+            const char* ok = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
+            send(client_fd, ok, strlen(ok), 0);
+        } 
+       else if (strstr(buffer, "application/x-www-form-urlencoded")) {
+            post_data(buffer,client_fd,body_len);
+        }
     } else {
-        const char* not_supported = "HTTP/1.0 501 Not Implemented\r\nContent-Type: text/plain\r\n\r\nOnly GET and POST supported.\n";
-        send(client_fd, not_supported, strlen(not_supported), 0);
+        send_404(client_fd);
     }
-
-    close(client_fd);
 }
 
 int main() {
     mkdir(UPLOAD_DIR, 0755);
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
-    }
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    set_nonblocking(server_fd);
 
-    struct sockaddr_in addr;
+    struct sockaddr_in addr = {0};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PORT);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        perror("Bind failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
+    bind(server_fd, (struct sockaddr*)&addr, sizeof(addr));
+    listen(server_fd, 128);
 
-    if (listen(server_fd, 10) < 0) {
-        perror("Listen failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
-    }
+    int epoll_fd = epoll_create1(0);//epoll instance
+    struct epoll_event ev, events[MAX_EVENTS];
+    ev.events = EPOLLIN;//file descriptor is ready for reading.
+    ev.data.fd = server_fd;//registers 
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &ev);//adds in the interest list
 
-    printf("HTTP Server running at http://localhost:%d\n", PORT);
+    printf("HTTP Server running on port %d (epoll level-triggered)\n", PORT);
 
     while (1) {
-        struct sockaddr_in client_addr;
-        socklen_t client_len = sizeof(client_addr);
-        int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+        int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);//untill event happens
+        //n is the number of ready file descriptors returned by epoll_wait().
+        for (int i = 0; i < n; ++i) {
+            int fd = events[i].data.fd;//tore the file descriptor in data.fd.
 
-        if (client_fd >= 0) {
-            printf("Client connected: %s:%d\n",
-                   inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-            handle_client(client_fd, client_addr);
+            if (fd == server_fd) {//accepting new connections
+                struct sockaddr_in cli;
+                socklen_t len = sizeof(cli);
+                int client_fd = accept(server_fd, (struct sockaddr*)&cli, &len);
+                if (client_fd >= 0) {
+                    set_nonblocking(client_fd);
+                    ev.events = EPOLLIN;
+                    ev.data.fd = client_fd;
+                    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
+                    create_client(client_fd);
+                }
+            } else {
+                client_ctx* ctx = get_client(fd);
+                if (!ctx) continue;
+
+                int r = recv(fd, ctx->buffer + ctx->received, BUFFER_SIZE - ctx->received - 1, 0);
+//ctx->buffer + ctx->receivedpoints to the next free position in the buffer where new data should be written.
+                if (r <= 0) {
+                    close(fd);
+                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+                    remove_client(fd);
+                    continue;
+                }
+
+                ctx->received += r;
+                ctx->buffer[ctx->received] = '\0';
+//to check if complete header is received or not
+                if (!ctx->header_parsed) {
+                    char* header_end = strstr(ctx->buffer, "\r\n\r\n");
+                    if (header_end) {
+                        ctx->header_parsed = true;
+                        char* cl = strcasestr(ctx->buffer, "Content-Length:");
+                        if (cl) {
+                            sscanf(cl, "Content-Length: %d", &ctx->content_length);
+                        } else {
+                            ctx->content_length = 0;
+                        }
+                    }
+                }
+
+                if (ctx->header_parsed) {
+                    char* body = strstr(ctx->buffer, "\r\n\r\n");
+                    if (!body) continue;
+                    int body_len = ctx->received - (body + 4 - ctx->buffer);
+                    if (body_len >= ctx->content_length) {
+                        handle_request(fd,body_len);
+                        close(fd);
+                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+                        remove_client(fd);
+                    }
+                }
+            }
         }
     }
 
