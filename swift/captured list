@@ -1,0 +1,247 @@
+/*//simple closures which prints r value dynamically
+var r = 5
+var closure = { 
+    print(r)
+}
+r = 6
+closure()
+r = 7
+closure()
+*********************************************
+//simple closure with capturing r 
+var r = 5
+var closure = { [r] in
+    print(r)
+}
+r = 6
+closure()
+r = 7
+closure()
+**************************************
+//closures that take no parameters and return int
+var wid = 2
+var hei = 5
+var area: () -> Int = { [wid , hei] in 
+    return wid * hei
+}
+hei = 10
+print(area())
+******************************************************
+// more than one parameters and return type and along with captured list
+var num = "guys "
+var e = "welcome"
+var repet: (String, Int) -> String = {[num, e] str,nu in 
+    let greet = str + num + e
+    print(nu)
+    return greet
+}
+e = "bonjour"
+num = "world "
+print(repet("hi ", 2))
+******************************************************************
+//fn returning a closure 
+
+func multiplyFactor(factor: Int) -> (Int) -> Int {
+    // Define and return a closure
+    let multiplier: (Int) -> Int = { number in
+        return number * factor
+    }
+    return multiplier
+}
+
+// Use the function to create specific multiplier closures
+let double = multiplyFactor(factor: 2)
+let triple = multiplyFactor(factor: 3)
+
+// Use the generated closures to perform multiplication
+let result1 = double(10) 
+let result2 = triple(10) 
+
+print("Result 1: \(result1)") // Returns 20
+print("Result 2: \(result2)") // Returns 30
+
+***************************************************************
+//fn taking different closures as parameters and returning int
+func performSomeOperation(a: Int, b: Int, operation: (Int, Int) -> Int) -> Int {
+    let result = operation(a, b)
+    return result
+}
+
+let additionClosure: (Int, Int) -> Int = { (a, b) in
+    return a + b
+}
+
+let subtractionClosure: (Int, Int) -> Int = { (a, b) in
+    return a - b
+}
+
+let result1 = performSomeOperation(a: 5, b: 3, operation: additionClosure) 
+let result2 = performSomeOperation(a: 10, b: 2, operation: subtractionClosure) 
+
+// You can also pass a closure directly as a parameter
+let result3 = performSomeOperation(a: 4, b: 2, operation: { (a, b) in
+    return a * b
+}) 
+// Result: 8
+
+print("Result 1: \(result1)")
+print("Result 2: \(result2)")
+print("Result 3: \(result3)")
+
+
+
+******************************************************************
+
+
+
+
+//fn returning closure  and capturing context of enclosing function which is exited
+//totsl captured as reference type
+func makeIncrementer(by amount: Int) -> () -> Int {
+    var total = 0
+    return { 
+        total += amount
+        return total
+    }
+}
+
+let incrementByTwo = makeIncrementer(by: 2)
+print(incrementByTwo()) // Output: 2
+print(incrementByTwo()) 
+*****************************************************************
+//totel cpatureda as value type
+
+func makeIncrementer(by amount: Int) -> () -> Int {
+    var total = 0
+    return { [total] in
+        total += amount
+        return total
+    }
+}
+
+let incrementByTwo = makeIncrementer(by: 2)
+print(incrementByTwo()) // Output: 2
+print(incrementByTwo()) 
+// error cant modify total as it is captured in capture list
+*****************************************************************
+
+func makeIncrementer(by amount: Int) -> () -> Int {
+    var total = 0
+    return { [total] in //total is 0 always
+        var x = total
+        x += amount
+        return  x
+    }
+}
+
+let incrementByTwo = makeIncrementer(by: 2)
+print(incrementByTwo()) // Output: 2
+print(incrementByTwo()) 
+// 2 2 
+
+*****************************************************************
+
+func makeIncrementer(by amount: Int) -> () -> Int {
+    var total = 0
+    return {
+        var x = total
+        x += amount
+        return  x
+    }
+}
+
+let incrementByTwo = makeIncrementer(by: 2)
+print(incrementByTwo()) // Output: 2
+print(incrementByTwo()) 
+// 2 2 
+
+*****************************************************************
+incrementByTwo is stored on the stack, but it points to a closure on the heap, 
+not directly to a function in the text segment. 
+The closure contains:
+A pointer to the function code (in text segment),
+Captured variables (total, amount) stored on the heap.
+
+The name (makeIncrementer) is a symbol during compile time.
+The function body is compiled into machine code and placed in the text/code segment (read-only section of memory).
+At runtime, references (like closures) point to the function’s code 
+in that text segment via a function pointer (hidden).
+
+amount is passed to makeIncrementer → goes into the stack.
+Closure { total += amount } captures amount → copied into the heap.
+After makeIncrementer returns, the closure lives on the heap, and so does its copy of amount.
+
+total is a var declared in makeIncrementer().
+Normally this would live on the stack.
+But since the closure captures it, Swift moves it to the heap.
+This allows total to persist between calls and be mutated.
+
+x is declared inside the closure body:
+It is not captured, not shared.
+It is created fresh on the stack each time the closure is called.
+
+*****************************************************************
+// we cannot modify the variable that is cpatured inside the c;closure
+var d = 5
+var cl = { [d] in 
+    d = d + 5
+    print(d)
+}
+cl() // error d is an immutable capture 
+************************************************************************************
+// in order to change the value of d use class , do not use struct
+class b{
+var r = 5}
+var f = b()
+var closure = { [f] in  
+    f.r += 5 
+    print(f.r)
+}
+closure()
+********************************************************************************
+// we cannot capture a instance property defined inside an class or struct
+class b{
+var r = 5}
+var f = b()
+var closure = {[f.r] in  
+    print(f.r)
+}
+closure()
+//error
+
+***********************************************************************
+
+class b{
+var r = 5}
+var f = b()
+var closure = { [f.r] in  
+    f.r += 5 
+    print(f.r)
+}
+closure() //error 
+*****************************************************************
+class b{
+var r = 5}
+var f = b()
+var l = f.r
+var closure = {[l] in  
+    l += 10
+    print(l)
+}//error 
+
+*****************************************************************
+
+// soln  can be captured bu assigning a variable to the property
+//but cannot mofidy property directly in the capture list
+class b{
+var r = 5}
+var f = b()
+var l = f.r
+var closure = {[l] in  
+
+    print(l)
+}
+closure()
+*/
+
+

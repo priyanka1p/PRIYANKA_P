@@ -1,0 +1,65 @@
+var completionHandlers: [() -> Void] = []
+func someFunctionWithEscapingClosure(completionHandler: @escaping () -> Void) {
+    completionHandlers.append(completionHandler)
+}
+func someFunctionWithNonescapingClosure(closure: () -> Void) {
+    closure()
+}
+class SomeClass {
+    var x = 10
+    func doSomething() {
+
+        someFunctionWithEscapingClosure { self.x = 6 }
+        someFunctionWithNonescapingClosure { x = 200 }
+    }
+    
+}
+var instance = SomeClass()
+print(instance.x)
+instance.doSomething()
+print("here    \(instance.x)")
+completionHandlers.first?()
+print(instance.x)
+let ko = SomeClass()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var completionHandlers: [() -> Void] = []
+func someFunctionWithEscapingClosure(completionHandler: @escaping () -> Void) {
+    completionHandlers.append(completionHandler)
+}
+func someFunctionWithNonescapingClosure(closure: () -> Void) {
+    closure()
+}
+struct SomeClass {
+    var x = 10
+    mutating func doSomething() {
+        var local = self
+        someFunctionWithEscapingClosure { local.x = 6 
+        print(local.x)}
+        someFunctionWithNonescapingClosure { x = 200 
+            print(local.x)
+        }
+    }
+    
+}
+var instance = SomeClass()
+instance.doSomething()
+print("here    \(instance.x)")
+completionHandlers.first?()
+print(instance.x)

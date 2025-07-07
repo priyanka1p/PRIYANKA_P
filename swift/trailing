@@ -1,0 +1,139 @@
+//closure returning int 
+
+let sayf = { 
+    return r.count
+}
+r.append(3)
+var l = sayf()
+r.append(3)
+l = sayf()
+
+print(l)
+
+//function taking only closure as an argument 
+
+var msg = "priyanka"
+func greet(clo:()->Int){
+    let count = clo()
+    print(count)
+    
+}
+greet{
+    return msg.count
+}
+
+//closure does not captures and then makes changes does affect the original 
+
+var msg = "priyanka"
+func greet(clo:()->Int){
+    let count = clo()
+    print(count)
+    
+}
+greet{
+    let a = "Ms. "
+    msg = a + msg
+    return msg.count
+}
+print(msg)
+*************************
+12
+Ms. priyanka
+***********************
+
+//closure captures and then makes changes does not affect the original 
+
+var msg = "priyanka"
+func greet(clo:()->Int){
+    let count = clo()
+    print(count)
+    
+}
+greet{ [msg] in
+    var copy = msg
+    let a = "Ms. "
+    copy = a + msg
+    print(copy)
+    return copy.count
+}
+print(msg)
+************
+Ms. priyanka
+12
+priyanka
+**************
+
+//closure returning int and function returning void
+
+var r = [1,2,3]
+func add(arr: inout [Int], closure:([Int])->Int){
+    arr.append(90)
+    let c = closure(arr)
+    print(c)
+}
+add(arr:&r){arr in
+    return arr.count
+}
+*************
+4
+**************
+
+////closure returning int and function returning int
+
+var r = [1,2,3]
+func add(arr: inout [Int], closure:(Int)->Int)->Int{
+    arr.append(90)
+    return closure(arr.count)
+}
+let c = add(arr:&r){count in
+    return count
+}
+print(r,c)
+*********************
+[1, 2, 3, 90] 4
+*************************
+
+//mutiple trailing closure 
+
+class person{
+    var name:String
+    var gender:Character
+    init(name:String,gender:Character){
+        self.name = name
+        self.gender = gender
+    }
+}
+var flag:Bool
+flag = false
+var p = person(name:"Priya",gender:"G")
+var k = person(name: "Ashwin",gender:"B")
+func check(n:person, girl:(String)->Bool, boy:(String)->Bool){
+    if(n.gender == "G"){
+        flag = girl(n.name)
+        
+    }
+    else{
+        flag = boy(n.name)
+    }
+    if (flag){
+        print("Eligible for scholarship")
+    }
+    else{
+        print("Not eligible")
+    }
+}
+check(n:k){ (l) in
+    print("\(l) is girl")
+    return true
+}
+boy:{l in 
+    print("\(l) is boy")
+    return false
+}
+**************************
+Ashwin is boy
+Not eligible
+**************************
+
+
+

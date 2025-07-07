@@ -1,0 +1,105 @@
+var dict:[AnyHashable:Any] = [:]
+dict[1] = "one"
+dict["KL"] = 1
+print(dict)
+for (key, value) in dict {
+    print(key, value)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+var a = [1, 2, 3]
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+a[0] = 5
+print(a)
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+a.remove(at:0)
+print(a)
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+a.append(56)
+print(a)
+for i in 0..<a.count {
+    a.insert(100, at:1)  
+    print(a)
+    break
+}
+
+print(a) 
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+/*
+
+for i in a {
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+    if i == 2 {
+        if a.count > 2 {
+            a[2] = 100
+            print(a)
+        }
+    }
+    print(i)
+    a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+    
+}
+a.withUnsafeBufferPointer {
+    print("a buffer:", $0.baseAddress!)
+}
+
+
+var rr = [2, 3, 4]
+for i in rr {
+    print("i:", i)
+    rr.remove(at: 2)
+    print("rr:", rr)
+}
+
+
+
+for i in rr {
+    if i == 2 {
+        if rr.count > 2 {
+            rr.remove(at: 2)
+        }
+    }
+    print(i)
+}
+var rr = [2,3,4]
+for i in rr {
+    if i == 2 {
+        rr.remove(at: 2)
+        print(rr)
+    }
+    print(i)
+    print(rr)}
+print(rr)
+
+
+var rr = [2, 3, 4]
+
+for i in rr {
+    rr.remove(at: 2)
+    print(i)
+}
+print(rr)*/  
+

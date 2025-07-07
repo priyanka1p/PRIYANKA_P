@@ -1,0 +1,233 @@
+//STORED VS COMPUTED PROPERTY
+
+var r = "pri"
+var i = "praba"
+var d = r + " " + i 
+var f:String{
+    return r + " " + i 
+}
+print(d)
+r = "viji"
+print(d)
+print(f)
+***************
+pri praba
+pri praba
+viji praba
+***************
+
+//use case of lazy
+
+struct t{
+	var i = 10
+        var d = i + 10
+        }
+var te = t()
+print(te.d)
+***********************
+error: cannot use instance member 'i' within property initializer; property initializers run before 'self' is available
+    var d = i + 10
+    
+Because in Swift, stored properties are initialized in order, before self is fully formed.
+At the time d is being initialized, i has not been fully set up yet, 
+so you cannot reference one property (i) from another stored property (d) directly like that.
+******************************
+
+//soln use lazy
+
+struct t{
+	var i = 10
+        lazy var d = i + 10
+        }
+var te = t()
+print(te.d)
+*******************
+20
+*******************
+
+//LAZY acts as stored property so it cant change if the the variable like r change inbetween
+
+class person{
+    var first = "priya"
+    var last = "praba"
+    
+    var computed:String {
+        return first + " " + last
+    }
+    lazy var combine = first + " " + last
+    
+}
+var in1 = person()
+print(in1.computed)
+print(in1.combine)
+in1.first = "priyanka"
+print(in1.computed)
+print(in1.combine)
+in1.combine = "viji"//as lazy, it is a stored property we can assign 
+//and modify it but cannot act as co0mputed property 
+print(in1.combine)
+*********************
+priya praba
+priya praba
+priyanka praba
+priya praba
+viji
+*********************
+
+
+//computed property
+
+struct Person{
+    var name:String
+    var age:Int
+    }
+struct PeopleViewModel {
+    let people: [Person]
+    
+    var oldest: Person? {
+        people.sorted { (lhs, rhs) -> Bool in
+            lhs.age > rhs.age
+        }.first
+        }
+}
+
+let peopleViewModel = PeopleViewModel(people: [
+    Person(name: "Antoine", age: 30),
+    Person(name: "Jan", age: 69),
+    Person(name: "Lady", age: 3),
+    Person(name: "Jaap", age: 3)
+])
+print(peopleViewModel.oldest!.name) 
+
+//computed properety is of type optional because we dont know after sorting the array will contain 
+//an element or not. so its mandatory in swift to write it in optional
+//instead of .first we can write [1]
+
+
+//circle
+
+class Circle {
+    var radius: Double
+
+    var diameter: Double {
+        get {
+            return radius * 2
+        }
+        set {
+            radius = newValue / 2
+        }
+    }
+    init(radius:Double){
+        self.radius = radius
+    }
+}
+
+var circle = Circle(radius: 50)
+print(circle.diameter) // ➜ 10
+
+circle.diameter = 20
+print(circle.radius)   // ➜ 10
+
+
+//full nmae composwition
+
+
+struct Person {
+    var firstName: String
+    var lastName: String
+
+    var fullName: String {
+        get {
+            return "\(firstName) \(lastName)"
+        }
+        set {
+            let parts = newValue.split(separator: " ")
+            if parts.count > 1 {
+                firstName = String(parts[0])
+                lastName = String(parts[1])
+            }
+        }
+    }
+}
+
+
+var person = Person(firstName: "Priya", lastName: "praba")
+print(person.fullName)  // ➜ Priya praba
+
+person.fullName = "Viji Praba"
+print(person.firstName) // ➜ Viji
+print(person.lastName)  // ➜ Praba
+
+
+// how to pass multiple arguments to the computed property
+
+//using struct, classes 
+
+
+
+struct Size {
+    var width: Double
+    var height: Double
+}
+
+struct View {
+    var width: Double = 0
+    var height: Double = 0
+
+    var size: Size {
+        get {
+            return Size(width: width, height: height)
+        }
+        set {
+            width = newValue.width
+            height = newValue.height
+        }
+    }
+}
+
+var v = View()
+print(v.width)
+v.size = Size(width: 100, height: 200)
+print(v.width)   // ➜ 100
+print(v.height)  // ➜ 200
+
+//by passing tuples 
+
+struct Rectangle {
+    var width: Double = 0
+    var height: Double = 0
+    var flag = false
+    var area:Double {
+        width * height
+    }
+
+    var dimensions: (Double, Double,Bool) {
+        get {
+            return (width, height,flag )
+        }
+        set {
+            width = newValue.0
+            height = newValue.1
+            flag = newValue.2
+        }
+    }
+    
+}
+
+var rect = Rectangle()
+print(rect.area)
+print(rect.flag)
+rect.dimensions = (10, 20, true) // ✅ Pass two values as a tuple
+print(rect.width)  // ➜ 10
+print(rect.height) // ➜ 20
+print(rect.area)
+print(rect.dimensions)
+
+***************************
+0.0
+false
+10.0
+20.0
+200.0
+(10.0, 20.0, true)
+***************************

@@ -1,0 +1,217 @@
+/*enum Suit: String {
+    case hearts = "♥️"
+    case diamonds = "♦️"
+    case clubs = "♣️"
+    case spades = "♠️"
+    
+    static func allSuits() -> [Suit] {
+        return [.hearts, .diamonds, .clubs, .spades]
+    }
+    static func randomSuit() -> Suit {
+    let suits = allSuits()
+    return suits.randomElement()!
+}
+
+}
+let suit = Suit.randomSuit()
+print("Random suit: \(suit.rawValue)")
+
+*/
+enum Planet: Int {
+    case mercury = 1, venus, earth, mars, jupiter, saturn, uranus, neptune
+    static subscript(n: Int) -> Planet? {
+        return Planet(rawValue: n)
+    }
+}
+if let m = Planet[47]{
+    print(m as Any)
+}
+else{
+    print("not found")
+}
+
+
+enum Suit: String {
+    case hearts = "♥️"
+    case diamonds = "♦️"
+    case clubs = "♣️"
+    case spades = "♠️"
+    
+    static func from(name: String) -> Suit? {
+        switch name.lowercased() {
+        case "hearts": return .hearts
+        case "diamonds": return .diamonds
+        case "clubs": return .clubs
+        case "spades": return .spades
+        default: return nil  // if user input doesn't match any case
+        }
+    }
+}
+if let input = readLine() {
+    if let suit = Suit.from(name: input) {
+        print("You selected the suit: \(suit.rawValue)")
+    } else {
+        print("Invalid suit name")
+    }
+}
+
+
+
+/*struct Game {
+    static var maxScore = 100
+
+    static func printScoreLimit() {
+        print("Max score is \(self.maxScore)") // ✅ Refers to type property
+    }
+}
+
+Game.printScoreLimit()
+Game.maxScore = 50
+Game.printScoreLimit()
+var l = Game()
+l.maxScore = 90 // error
+l.printScoreLimit()*/
+
+
+
+/*enum TriStateSwitch {
+    case off, low, high
+    mutating func next() {
+        switch self {
+        case .off:
+            self = .low
+        case .low:
+            self = .high
+        case .high:
+            self = .off
+        }
+    }
+}
+var ovenLight = TriStateSwitch.low
+print(ovenLight)
+
+ovenLight.next()
+print(ovenLight)
+// ovenLight is now equal to .high
+ovenLight.next()
+print(ovenLight)
+var o = TriStateSwitch.off
+print(o)
+ovenLight.next()
+print(ovenLight)
+
+
+
+
+class MyClass {
+    class func overridableTypeMethod() {
+        print("This can be overridden by subclasses")
+    }
+
+    static func nonOverridable() {
+        print("This CANNOT be overridden")
+    }
+}
+MyClass.overridableTypeMethod()
+MyClass.nonOverridable() */
+
+
+struct LevelTracker {
+    static var highestUnlockedLevel = 1
+    var currentLevel = 1
+
+
+    static func unlock(_ level: Int) {
+        if level > highestUnlockedLevel { highestUnlockedLevel = level }
+    }
+
+
+    static func isUnlocked(_ level: Int) -> Bool {
+        return level <= highestUnlockedLevel
+    }
+
+
+    @discardableResult
+    mutating func advance(to level: Int) -> Bool {
+        if LevelTracker.isUnlocked(level) {
+            currentLevel = level
+            return true
+        } else {
+            return false
+        }
+    }
+}
+
+class Player {
+    var tracker = LevelTracker()
+    let playerName: String
+    func complete(level: Int) {
+        LevelTracker.unlock(level + 1)
+        tracker.advance(to: level + 1)
+    }
+    init(name: String) {
+        playerName = name
+    }
+}
+
+ var player = Player(name: "Beto")
+if player.tracker.advance(to: 6) {
+    print("player is now on level 6")
+} else {
+    print("level 6 hasn't yet been unlocked")
+}
+// Prints "level 6 hasn't yet been unlocked"
+
+
+
+
+enum Suit: String {
+    case hearts = "♥️"
+    case diamonds = "♦️"
+    case clubs = "♣️"
+    case spades = "♠️"
+    
+    static func from(name: String) -> Suit? {
+        switch name.lowercased() {
+        case "hearts": return .hearts
+        case "diamonds": return .diamonds
+        case "clubs": return .clubs
+        case "spades": return .spades
+        default: return nil  // if user input doesn't match any case
+        }
+    }
+}
+if let input = readLine() {
+    if let suit = Suit.from(name: input) {
+        print("You selected the suit: \(suit.rawValue)")
+    } else {
+        print("Invalid suit name")
+    }
+}
+
+
+
+
+
+
+struct MathUtils {
+     func square(_ num: Int) -> Int {
+        return num * num
+    }
+}
+
+let result = MathUtils()
+print(result.square(5))  // Output: 25
+struct Counter {
+    static var totalCount = 0
+    var h = 10
+    static func increment() {
+        totalCount += 1
+        print("Total count is now \(self.totalCount)")
+    }
+}
+
+Counter.increment()  // Output: Total count is now 1
+var r = Counter()
+print(r.totalCount)
+

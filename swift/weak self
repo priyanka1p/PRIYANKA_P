@@ -1,0 +1,168 @@
+STRONG SELF  
+
+class Counter {
+    var value = 10
+    var mul = 10
+    func makeClosure() -> () -> Void {
+        return { [self] in
+            print(value, mul)
+        }
+    }
+    deinit{
+        print("The end")
+    }
+
+}
+
+var counter:Counter? = Counter()
+let closure = counter?.makeClosure()
+
+closure?()
+counter?.value = 99
+counter?.mul = 55
+closure?()
+counter = nil
+print(counter?.value)
+closure?() //99 55
+
+
+
+
+WEAK SELF
+
+class Counter {
+    var value = 10
+    var mul = 10
+    func makeClosure() -> () -> Void {
+        return { [weak self] in
+            print(self?.value ?? -1, self?.mul ?? -1)
+        }
+    }
+    deinit{
+        print("The end")
+    }
+}
+ 
+var counter:Counter? = Counter()
+let closure = counter?.makeClosure()
+
+closure?()
+counter?.value = 99
+counter?.mul = 55
+closure?()
+counter = nil
+closure?()
+
+
+
+class Counter {
+    var value = 10
+    var mul = 10
+
+    func makeClosure() -> () -> Void {
+        return { [weak self] in
+        if let self = self{
+            print(self.value, self.mul)
+        }
+        else{
+            print("not")
+        }
+    }
+}
+}
+var counter: Counter? = Counter()
+let closure = counter?.makeClosure()
+
+closure?()         // prints: 10 10
+counter?.value = 99
+counter?.mul = 55
+closure?()         // prints: 99 55
+
+counter = nil
+closure?()  //NIL
+print(counter?.value)//nil
+only in strong the retain cycle is incremented
+
+if deinitialized closure also not point to the refrence it will return nil in weak self aws it is optional
+in strong self , the clkosure still points to the obj but the main reference is deinitialized that leads to memory leak due to retain cycle
+in uniwned self, the closure is used till the obj is alive that is beofre it is deinitialized if we use that after deinitialization then it will crash
+
+UNOWNED SELF 
+
+class Counter {
+    var value = 10
+    var mul = 10
+
+    func makeClosure() -> () -> Void {
+        return { [unowned self] in
+            print(value, mul)
+        }
+    }
+}
+var counter: Counter? = Counter()
+let closure = counter?.makeClosure()
+
+closure?()         // prints: 10 10
+counter?.value = 99
+counter?.mul = 55
+closure?()         // prints: 99 55
+
+counter = nil
+closure?()//CRASH   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*class ViewModel {
+    var name = "Priya"
+    var say: (() -> Void)?
+
+    func setup() {
+        say = { [weak self] in
+            print("Hello \(self?.name ?? "nil")")
+        }
+    }
+
+    deinit {
+        print("ViewModel deinitialized")
+    }
+}
+
+var vm: ViewModel? = ViewModel()
+vm?.setup()
+vm = nil
+
+class ViewModel {
+    var name = "Priya"
+    var say: (() -> Void)?
+
+    func setup() {
+        say = {
+            print("Hello \(self.name)")  // 🚨 Strong capture of self
+        }
+        say?()
+    }
+
+    deinit {
+        print("ViewModel deinitialized")
+    }
+}
+
+var vm: ViewModel? = ViewModel()
+vm?.setup()
+
+vm = nil
+
+    */
