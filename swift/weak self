@@ -27,9 +27,15 @@ closure?() //99 55
 
 
 
-
+****************************************************
 WEAK SELF
 
+weak is used to create weak references, which are only allowed for class instances, because only class instances are reference types.
+Structs in Swift are value types, so they are copied on assignment and do not support reference counting.
+Therefore, you cannot use weak with self (or any variable) inside a struct.
+*****************************************************
+weak self is always optional
+************************************************
 class Counter {
     var value = 10
     var mul = 10
@@ -43,18 +49,41 @@ class Counter {
     }
 }
  
-var counter:Counter? = Counter()
-let closure = counter?.makeClosure()
+var counter:Counter = Counter()
+let closure = counter.makeClosure()
+closure()
+counter.value = 99
+counter.mul = 55
+closure()
+closure()
+**************
+10 10
+99 55 
+99 55
+**********************************************************
+this might seem complex so can use guard let or if let 
+            print(self?.value ?? -1, self?.mul ?? -1)
+            ********************************************
+//GUARD LET
 
-closure?()
-counter?.value = 99
-counter?.mul = 55
-closure?()
-counter = nil
-closure?()
+class Counter {
+    var value = 10
+    var mul = 10
+    func makeClosure() -> () -> Void {
+        return { [weak self] in
+            guard let self = self else {
+                print("Counter has been deallocated")
+                return
+            }
+            print(self.value, self.mul)
+        }
+    }
+    deinit {
+        print("The end")
+    }
+}
 
-
-
+//IF LET
 class Counter {
     var value = 10
     var mul = 10
@@ -69,24 +98,221 @@ class Counter {
         }
     }
 }
+	deinit {
+        print("The memory deallocated")
+    }
 }
-var counter: Counter? = Counter()
-let closure = counter?.makeClosure()
+ 
+var counter:Counter = Counter()
+let closure = counter.makeClosure()
+closure()
+counter.value = 99
+counter.mul = 55
+closure()
+closure()
+********************************************************
+in order to understand weak self, u have to deallocate the class and check if its deallocated or not.
+so make the instance variable, optional so that we can make it nil after use. 
+if we dont declare it as nil we cannot deallocate manually.
 
-closure?()         // prints: 10 10
+once nil is assigned to that optional instance variable, deinint is called.
+that means reference is dead to that object.
+since it is weak reference, there is referene cycle from the closure.
+after dealloaction if you call closure it will print nil. 
+********************************************************
+class Counter {
+    var value = 10
+    var mul = 10
+    func makeClosure() -> () -> Void {
+        return { [weak self] in
+            print(self?.value , self?.mul ?? "nil")
+        }
+    }
+    deinit{
+        print("memory deallocated")
+    }
+}
+var counter:Counter? = Counter()
+let closure = counter?.makeClosure()
+closure?()
 counter?.value = 99
 counter?.mul = 55
-closure?()         // prints: 99 55
-
+closure?()
 counter = nil
-closure?()  //NIL
-print(counter?.value)//nil
-only in strong the retain cycle is incremented
+closure?()
+print(counter?.value)
 
-if deinitialized closure also not point to the refrence it will return nil in weak self aws it is optional
+************************
+Optional(10) 10
+Optional(99) 55
+memory deallocated
+nil nil
+
+**********************************
+you can use in struct only if it is capturing class instance from struct
+Use unowned or weak only when capturing class instances from within a closure in a struct if the struct has a reference to a class instance.
+
+*****************************************************************
+Strong ref
+_______________________________
+class MyClass {
+    func sayHello() {
+        print("Hello")
+    }
+    deinit {
+        print("MyClass deinitialized")
+    }
+}
+
+struct MyStruct {
+    var obj: MyClass? 
+    func doSomething() {
+        let closure = { [obj] in
+            obj?.sayHello()
+        }
+        closure()
+        print("inside function")
+    }
+}
+
+var instance:MyClass? = MyClass()
+var m = MyStruct(obj: instance)
+m.doSomething()
+instance = nil
+print("**")
+m.obj = nil
+print("inside scope")
+_________________________________
+Hello
+inside function
+**
+MyClass deinitialized
+inside scope
+__________________
+3 ref: all r strong ref
+1.instance
+2.m.obj
+3.closure but that ref is dead once it comes out of dosomething function, that why when m.obj = nil it calls deinit eventhough it is captured strongly.
+__________________________________________________________ __________
+weak inside fn
+_____________
+class MyClass {
+    func sayHello() {
+        print("Hello")
+    }
+    deinit {
+        print("MyClass deinitialized")
+    }
+}
+
+struct MyStruct {
+    var obj: MyClass? 
+    func doSomething() {
+        let closure = { [weak obj] in
+            obj?.sayHello()
+        }
+        closure()
+        print("inside function")
+    }
+}
+
+var instance:MyClass? = MyClass()
+var m = MyStruct(obj: instance)
+m.doSomething()
+instance = nil
+print("**")
+m.obj = nil
+print("inside scope")
+_______________________________________
+3 ref same as previous but closure ref is weak and also dead outside the fn scope
+same op
+_________________________________________________
+class MyClass {
+    func sayHello() {
+        print("Hello")
+    }
+    deinit {
+        print("MyClass deinitialized")
+    }
+}
+
+struct MyStruct {
+    weak var obj: MyClass? 
+    func doSomething() {
+        let closure = { [ obj] in
+            obj?.sayHello()
+        }
+        closure()
+        print("inside function")
+    }
+}
+
+var instance:MyClass? = MyClass()
+var m = MyStruct(obj: instance)
+m.doSomething()
+instance = nil
+print("**")
+m.obj = nil
+print("inside scope")
+_______________________
+Hello
+inside function
+MyClass deinitialized
+**
+inside scope
+________________3
+3 ref 
+1. strong
+2. weak
+3. closure ref captures strongly by it is already a weak ref so cannot retain the myclass object allive
+arc dont increment for this
+so after instance made nil, deinit is called
+__________________________________________
+class MyClass {
+    func sayHello() {
+        print("Hello")
+    }
+    deinit {
+        print("MyClass deinitialized")
+    }
+}
+struct MyStruct {
+    var obj: MyClass?  
+    func doSomething() {
+        let closure = { [weak obj] in
+            obj?.sayHello()
+        }
+        closure()
+        print("inside function")
+    }
+}
+do {
+    let instance = MyClass()
+    var m = MyStruct(obj: instance)
+    m.doSomething()
+    print("inside scope")
+}
+*********************************************************************
+Hello
+inside function
+inside scope
+MyClass deinitialized
+**************
+The MyClass instance (instance) is:
+Strongly owned by the variable instance inside the do block.
+Also strongly owned by the struct (m) if you use var obj (strong).
+When you use [weak obj] in the closure:
+Even with a strong obj, you're capturing a weak reference in the closure, so no strong reference cycle is created.
+The closure doesn’t keep obj alive beyond the scope of the function.
+So deinit is called when do {} finishes and instance and m both go out of scope.
+
+*********************************************************************** 
+only in strong self, the retain cycle is incremented
+
+in weak self,if deinitialized, closure also not point to the refrence, it will return nil, as it is optional
 in strong self , the clkosure still points to the obj but the main reference is deinitialized that leads to memory leak due to retain cycle
 in uniwned self, the closure is used till the obj is alive that is beofre it is deinitialized if we use that after deinitialization then it will crash
-
+***************************************************************************
 UNOWNED SELF 
 
 class Counter {
@@ -166,3 +392,22 @@ vm?.setup()
 vm = nil
 
     */
+    
+    
+    
+**********************************************
+deinit()
+deinit is responsible for cleaning up the heap-allocated object itself.
+The reference (pointer) on the stack is cleaned up automatically when it goes out of scope.
+it is only used inside classes
+cant be called manually
+when the last strong reference to that instance is removed, it is automatically called by the compiler to clean up
+Swift uses Automatic Reference Counting (ARC) to track how many strong references point to a class instance.
+When the reference count becomes zero:
+The instance’s deinit is called.
+Then the object is deallocated from the heap.
+init() -
+called automatically
+************************************************
+
+ 
