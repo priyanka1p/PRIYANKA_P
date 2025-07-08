@@ -1,0 +1,46 @@
+use case of do{}
+#You can use do {} to limit the lifetime of variables or trigger deinit earlier, especially useful when dealing with resources like files, memory-heavy objects, etc.
+************************************
+do {
+    let file = FileHandle(forReadingAtPath: "data.txt")
+    // use file
+} // file is deallocated here → frees resource earlier
+********************************
+class Test {
+    deinit {
+        print("Test deinitialized")
+    }
+}
+do {
+    let t = Test()
+    print("Inside do")
+}
+// t goes out of scope → deinit runs here
+print("Outside do")
+*****************************
+This is the most well-known use case. Use do with try and catch to handle errors thrown by functions.
+
+enum MyError: Error {
+    case bad
+}
+
+func risky() throws {
+    throw MyError.bad
+}
+
+do {
+    try risky()
+} catch {
+    print("Caught an error: \(error)")
+}
+**********************************************
+4. Variable Shadowing
+If you want to reuse the same variable name within a smaller scope:
+let number = 10
+
+do {
+    let number = 20  // shadows the outer 'number'
+    print(number)    // prints: 20
+}
+print(number)  
+***********************************************

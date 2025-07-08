@@ -1,0 +1,66 @@
+ struct Person: CustomStringConvertible {
+     let name: String
+     var description: String {
+         print("Asking for Person description.")
+         return "Person name is \(name)"
+     }
+ }
+ let isDebuggingEnabled: Bool = false
+ 
+ func debugLog(_ message: @autoclosure () -> String) {
+
+     if isDebuggingEnabled {
+         print("[DEBUG] \(message())")
+     }
+ }
+
+ let person = Person(name: "Bernie")
+ debugLog(person.description)
+*******************************************
+only when bool is true u will exceute the person.description, it is called delayed evaluation\
+********************************************
+
+func greet(res: @autoclosure () -> Int){
+    print("Closure printed")
+    let f = res()
+    print(f)
+}
+greet(res: 5 + 5 - 10)
+*****************
+implicitly it is like { return 5+5-10}	
+****************************************
+
+func myAssert(_ condition: @autoclosure () -> Bool, _ message: @autoclosure () -> String) {
+    if !condition() {
+        print("Assertion failed: \(message())")
+    }
+}
+let number = -10
+myAssert(number > 0, "Custom Assert: Number must be positive")
+
+*******************************************************
+autoclosures cannot be used to pass input parameters. its job is only to wrap expressions. 
+You can't pass a closure like { a, b in a * b } using @autoclosure, but you can do a * b if a and b are defined in the outer scope.
+No, not directly — @autoclosure does not support capture lists.
+It captures by reference, and you cannot customize how it captures variables.
+*********************************************************************
+
+func performSomeOperation(a: Int , b:Int, _ operation: @autoclosure () -> Int) -> Int {
+    let result = operation(a ,b)
+    return result
+}
+let result3 = performSomeOperation(a: 4, b: 2,  a * b) 
+
+print("Result 3: \(result3)")
+//error
+***************************************************
+soln:
+func performSomeOperation( _ operation: @autoclosure () -> Int) -> Int {
+    let result = operation()
+    return result
+}
+let a = 4, b = 2
+let result3 = performSomeOperation(  a * b) 
+print("Result 3: \(result3)")   //8
+*******************************************************
+
