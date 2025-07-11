@@ -1,0 +1,871 @@
+Property observers are declared as a variable and not as constants because it is only a mutable property that can be tracked by property observers.
+Hence, property observers are declared with var and not the let keyword.
+
+comp prop does not store
+observers store. This value could be optional type or any other type.
+
+willSet and didSet will never get called on setting the initial value of the property. 
+if you assign the value, it gets called.
+
+willSet and didSet both have a default parameters newValue and oldValue. You are free to choose a custom parameter name of your choice. These parameters are constants, hence you cannot mutate their values. 
+Also note that in didSet, you can access the oldValue parameter and also the property whose value is already set.
+<<<<<<<<<<<<<<<<<<<<<<
+property observers cannot be used on lazy variable because lazy variable get properly initialised and 
+assigned to memory only when they are called in your program.   (but in later version it we can use lazy )
+lazy means the property is initialized only once, when it's first accessed.
+willSet and didSet are not supported on lazy properties because:
+	Observers assume the property already exists and will be updated.
+	But lazy means the value doesn’t exist until accessed.
+	So Swift cannot guarantee how or when to call the observers.  >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Only the superclass can define storage for a property.
+Subclasses must override properties using computed properties only, not stored ones.
+This ensures a clear, single location of memory storage in the inheritance chain.
+***************************************************************
+class**********
+class StepCounter {
+    var totalSteps: Int = 0 {
+        willSet(newTotalSteps) {
+            print("About to set totalSteps to \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("Added \(totalSteps - oldValue) steps")
+            }
+        }
+    }
+}
+let stepCounter = StepCounter()
+stepCounter.totalSteps = 200
+stepCounter.totalSteps = 360
+stepCounter.totalSteps = 896
+***************************************************************
+About to set totalSteps to 200
+Added 200 steps
+About to set totalSteps to 360
+Added 160 steps
+About to set totalSteps to 896
+Added 536 steps
+***************************************************************
+//STRUCT u cannot create an instance with let when using observers
+structs are value types.
+A let constant struct means the entire instance is immutable — you cannot modify any of its properties, even if they're declared with var.
+So trying to change stepCounter.totalSteps will result in a compile-time error.
+
+struct StepCounter {
+    var totalSteps: Int = 0 {
+        willSet(newTotalSteps) {
+            print("About to set totalSteps to \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("Added \(totalSteps - oldValue) steps")
+            }
+        }
+    }
+}
+let stepCounter = StepCounter() //use var
+stepCounter.totalSteps = 200
+stepCounter.totalSteps = 360
+stepCounter.totalSteps = 896
+**************
+error  use var 
+*************
+***************************************************************
+struct with init for initialization
+***************************************************************
+struct StepCounter {
+    var totalSteps: Int {
+        willSet(newTotalSteps) {
+            print("About to set totalSteps to \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("Added \(totalSteps - oldValue) steps")
+            }
+        }
+    }
+    init(){
+        totalSteps = 0
+    }
+}
+var stepCounter = StepCounter()
+stepCounter.totalSteps = 200
+stepCounter.totalSteps = 360
+stepCounter.totalSteps = 896
+***************************************************************
+About to set totalSteps to 200
+Added 200 steps
+About to set totalSteps to 360
+Added 160 steps
+About to set totalSteps to 896
+Added 536 steps
+
+***************************************************************
+or while creating instance pass as arguments
+**********************************
+struct StepCounter {
+    var totalSteps: Int {
+        willSet(newTotalSteps) {
+            print("About to set totalSteps to \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("Added \(totalSteps - oldValue) steps")
+            }
+        }
+    }  
+}
+var stepCounter = StepCounter(totalSteps:0)
+stepCounter.totalSteps = 200
+stepCounter.totalSteps = 360
+stepCounter.totalSteps = 896
+
+***************************************************************
+class with init()
+***************************************************************
+class StepCounter {
+    var totalSteps: Int {
+        willSet(newTotalSteps) {
+            print("About to set totalSteps to \(newTotalSteps)")
+        }
+        didSet {
+            if totalSteps > oldValue  {
+                print("Added \(totalSteps - oldValue) steps")
+            }
+        }
+    }
+    init(){
+        self.totalSteps = 0
+    }
+    init(totalSteps:Int){
+        self.totalSteps = totalSteps
+    }
+}
+var stepCounter = StepCounter(totalSteps:0)
+stepCounter.totalSteps = 200
+stepCounter.totalSteps = 360
+stepCounter.totalSteps = 896
+**************************************************************
+**************************************************************
+properties in struct 
+observer in class
+**************************************************************
+import Foundation
+struct Person {
+    var name: String = "p"
+    var age: Int = 3
+}
+var x:Int 
+x = 0
+class ViewController {
+    var person: Person {
+        didSet {
+        
+            print("Called after setting the new value")
+                print("New name is \(person.name) and old name is \(oldValue.name)")
+            
+        }
+        willSet(myNewValue) {
+            x = myNewValue.age
+            print(x)
+            print("Called before setting the new value")
+                print("New name is \(myNewValue.name)")
+        } 
+    }
+    init(){
+        self.person = Person()
+}
+    
+}
+
+var vc = ViewController()
+vc.person = Person(name: "Priya", age: 25)
+vc.person = Person(name: "Praba", age: 30)
+**************************************
+25
+Called before setting the new value
+New name is Priya
+Called after setting the new value
+New name is Priya and old name is p
+30
+Called before setting the new value
+New name is Praba
+Called after setting the new value
+New name is Praba and old name is Priya
+***************************************************************
+***************************************************************
+//property observers can be used anywhere in the program
+also inside observers we can write any fn, closures or expressions
+***************************************************************
+var age: Int = 0 {
+    willSet{
+        print(newValue)
+    }
+    didSet {
+        print("Age changed from \(oldValue) to \(age)")
+        validateAge()
+    }
+}
+age = 10
+func validateAge() {
+    if age < 0 {
+        print("Invalid age!")
+    } else {
+        print("Age is valid")
+    }
+} 
+***************************************************************
+10
+Age changed from 0 to 10
+Age is valid
+***************************************************************
+//used along with closures
+***************************************************************
+class ViewController {
+    var onNameWillChange: (() -> Void)?
+    var name: String = "OldName" {
+        willSet {
+            print(" willSet: Name will change to \(newValue)")
+            onNameWillChange?()  
+        }
+        didSet {
+            print(" didSet: Name changed from \(oldValue) to \(name)")
+            validateName()       
+        }
+    }
+    func validateName() {
+        if name.isEmpty {
+            print("Name is invalid: empty string.")
+        } else {
+            print("name is valid.")
+        }
+    }
+}
+let vc = ViewController()
+vc.onNameWillChange = {
+    print("Closure: Name is about to change!")
+}
+vc.name = "Priya"
+vc.name = ""
+***************************************************************
+ willSet: Name will change to Priya
+Closure: Name is about to change!
+ didSet: Name changed from OldName to Priya
+name is valid.
+ willSet: Name will change to 
+Closure: Name is about to change!
+ didSet: Name changed from Priya to 
+Name is invalid: empty string.
+***************************************************************
+optional observer
+***************************************************************
+struct Person {
+    var name: String
+    var age: Int
+}
+class ViewController {
+    var person: Person? {
+        willSet(myNewValue) {
+            print("Called before setting the new value")
+            if let newName = myNewValue?.name {
+                print("New name is \(newName)")
+            }
+        }
+       didSet {
+            print("Called after setting the new value")
+            if let name = person?.name {
+                print("New name is \(name) and old name is \( oldValue?.name ?? "nil")")
+            }
+        }
+    }   
+}
+let vc = ViewController()
+vc.person = Person(name: "Priya", age: 25)
+vc.person = Person(name: "Praba", age: 30)
+vc.person = nil
+vc.person = Person(name: "viji", age: 32)
+******************************************************
+Called before setting the new value
+New name is Priya
+Called after setting the new value
+New name is Priya and old name is nil
+Called before setting the new value
+New name is Praba
+Called after setting the new value
+New name is Praba and old name is Priya
+Called before setting the new value
+Called after setting the new value
+Called before setting the new value
+New name is viji
+Called after setting the new value
+New name is viji and old name is nil
+***************************************************************
+***************************************************************
+//overriding property
+class can be overrided but struct cannot
+***************************************************************
+class Vehicle {
+    var currentSpeed = 0.0
+}
+class Car: Vehicle {
+    var gear = 1
+}
+class AutomaticCar: Car {
+    override var currentSpeed: Double {
+        didSet {
+            print(oldValue , gear)
+            gear = Int(currentSpeed / 10.0) + 1
+            
+        }
+    }  
+}
+You are not creating a new storage.
+You're adding behavior (didSet) on top of the inherited storage.
+Swift will insert your observer logic into the getter and setter of currentSpeed.
+
+Inheriting a stored property	- AutomaticCar uses Vehicle’s storage for currentSpeed
+Overriding with didSet	   -   Adds behavior while keeping same storage
+Is didSet observer initialized?	  - Yes, and it works on value change
+Triggered during init()?	   -   No, observers don’t fire during initialization
+
+let autoCar = AutomaticCar()
+autoCar.currentSpeed = 50.0
+print(autoCar.currentSpeed)
+print(autoCar.gear)
+
+0.0 1
+50.0
+6
+
+in this vehivles stored propeerty is inherited to automaticcar class hence it is initialized with 0.0
+any changes happens will modify the current spreed in vehicle's storage. 
+if i create a new instance for car, then gear is set as 1 not to 6, because each class instance 
+has different storage and class and subclass instance as its own instance storage
+
+let c = Car()
+print(c.gear) // 1
+***************************************************************
+***************************************************************
+  In Swift, when you override a stored property (like var speed = 0) from a superclass, you can’t override it as a stored property again. You must override it as a computed property
+1.super.init()
+2.computed property.
+3.using observers wh is internally changed from computed prop to observers.
+***************************************************************
+cannot override as atored property
+***************************************************************
+class Vehicle {
+    var speed: Double = 0 
+}
+class Car: Vehicle {
+    override var speed:Double = 60    
+    
+}
+let myCar = Car()
+print("Final speed: \(myCar.speed)")
+***************************************************************
+error
+***************************************************************
+class Vehicle {
+    var speed: Double = 0 {
+        willSet {
+            print("Vehicle willSet: \(newValue)")
+        }
+        didSet {
+            print("Vehicle didSet: \(oldValue)")
+        }
+    }
+}
+class Car: Vehicle {
+    override var speed = 60    // triggers willSet and didSet observers
+    
+}
+let myCar = Car()
+print("Final speed: \(myCar.speed)")
+*************
+error 
+***************************************************************
+**************************************************
+
+1.super.init()
+***************************************************************
+This calls the initializer of the superclass (Vehicle).
+It’s required to initialize all the stored properties declared in Vehicle (speed, in this case).
+Swift must initialize the superclass before you modify any of its stored properties in the subclass.
+**************************************************
+class Vehicle {
+    var speed: Double = 0 
+}
+class Car: Vehicle {
+    override init(){
+    super.init()
+        speed = 60   
+    }
+}
+let myCar = Car()
+print("Final speed: \(myCar.speed)") // 60.0
+**************************************************
+overridding in multiple children class with the same property name with super init
+**************************************************
+class Vehicle {
+    var speed: Double = 0 {
+        willSet{
+            print(newValue)
+        }
+        didSet{
+            print(oldValue,speed)
+        }
+    }
+}
+class auto:Vehicle{
+    override init(){
+    super.init()
+        self.speed = 60   
+    }
+}
+class Car:auto{
+    override init(){
+    super.init()
+        super.speed = 100  
+    }
+}
+let myCar = Car()
+print("Final speed: \(myCar.speed)")
+**************************************************
+60.0
+0.0 60.0
+100.0
+60.0 100.0
+Final speed: 100.0
+**************************************************
+import Foundation
+class Vehicle {
+    var speed: Int = 90 {
+        willSet {
+            print("Vehicle willSet speed: \(newValue)")
+        }
+        didSet {
+            print("Vehicle didSet speed: from \(oldValue) to \(speed)")
+        }
+    }
+    var age: Int = 10 {
+        willSet {
+            print("Vehicle willSet age: \(newValue)")
+        }
+        didSet {
+            print("Vehicle didSet age: from \(oldValue) to \(age)")
+        }
+    }
+    var name: String = "priyanka" {
+        willSet {
+            print("Vehicle willSet name: \(newValue)")
+        }
+        didSet {
+            print("Vehicle didSet name: from \(oldValue) to \(name)")
+        }
+    }
+}
+class Car: Vehicle {
+    override init() {
+        super.init()
+        speed = 80          //  triggers speed observers
+        self.age = 9        //  triggers age observers
+        var name = "viji"   //  local variable, does NOT modify self.name
+        // Use self.name = "viji" to trigger name observers
+    }
+}
+let myCar = Car()
+myCar.speed = 100
+myCar.name = "praba"
+print("Final speed: \(myCar.speed), age: \(myCar.age), name: \(myCar.name)")
+*************************************************
+Vehicle willSet speed: 80
+Vehicle didSet speed: from 90 to 80
+Vehicle willSet speed: 100
+Vehicle didSet speed: from 80 to 100
+Vehicle willSet name: praba
+Vehicle didSet name: from priyanka to praba
+Final speed: 100, age: 10, name: praba
+
+******************************************************
+2. overriding stored property with computed property
+******************************************************
+class Parent {
+    var score: Int = 0
+}
+class Child: Parent {
+    override var score: Int {
+        get {
+            print("Getting score")
+            return super.score
+        }
+        set {
+            print("Setting score to \(newValue)")
+            super.score = newValue
+        }
+    }
+}
+let c = Child()
+print(c.score)   
+c.score = 90     // Setting score to 90
+print(c.score)   // Getting score \n 90
+******************************************************
+0
+Setting score to 90
+Getting score
+90
+******************************************************
+3.overriding stored property with property observers
+******************************************************
+class Parent {
+    var score: Int = 0
+}
+class Child: Parent {
+    override var score: Int {
+        willSet{
+            print(newValue)
+        }
+        didSet {
+            print(oldValue,score)
+        }
+    }
+}
+let c = Child()
+print(c.score)   // Getting score \n 90
+c.score = 90     // Setting score to 90
+print(c.score)   // Getting score \n 90
+******************************************************************************
+4.overriding with computed properties with manual observers
+******************************************************************************
+class Parent {
+    var value: Int = 10
+}
+class Child: Parent {
+    override var value: Int {
+        get {
+            super.value
+        }
+        set {
+            print("Child willSet: \(newValue)")
+            let oldVal = super.value
+            super.value = newValue
+            print("Child didSet: from \(oldVal) to \(super.value)")
+        }
+    }
+}
+let c = Child()
+c.value = 20
+******************************************************************************
+******************************************************
+in subclass, we cannot override  observers  alone 
+but we can override observer when it is used in a stored property
+******************************************************
+1.with computed property
+
+class Vehicle {
+    var speed: Int = 90 {
+        willSet {
+            print("Vehicle willSet speed: \(newValue)")
+        }
+        didSet {
+            print("Vehicle didSet speed: from \(oldValue) to \(speed)")
+        }  }
+}
+class Car: Vehicle {
+    override var speed: Int {
+        get {
+            return super.speed
+        }
+        set {
+            print("Custom set speed: \(newValue)")
+            super.speed = newValue
+        }
+    }
+}
+let myCar = Car()
+myCar.speed = 100
+myCar.speed = 190
+print("Final speed: \(myCar.speed)")
+******************************************************
+Custom set speed: 100
+Vehicle willSet speed: 100
+Vehicle didSet speed: from 90 to 100
+Custom set speed: 190
+Vehicle willSet speed: 190
+Vehicle didSet speed: from 100 to 190
+******************************************************************************
+2. observers
+******************************************************************************
+class Parent {
+    var value: Int = 0 {
+    willSet {
+            print("parent willSet: \(newValue)")
+        }
+        didSet {
+            print("Parent didSet: \(value)")
+        }
+    }
+}
+class Child: Parent {
+    override var value: Int {
+        willSet {
+            print("Child willSet: \(newValue)")
+        }
+        didSet {
+            print("Child didSet: \(value)")
+        }
+    }
+}
+let c = Child()
+c.value = 10
+****************************************
+Child willSet: 10
+parent willSet: 10
+Parent didSet: 10
+Child didSet: 10
+******************************************************************************
+******************************************************************************
+computed property can be overrided in subclass in:
+******************************************************************************
+1. with get only
+******************************************************************************
+class Animal {
+    var name: String = "Unknown"
+    
+    var description: String {
+        return "Animal: \(name)"
+    }
+}
+
+class Dog: Animal {
+    override var description: String {
+        return "Dog: \(name.uppercased())"
+    }
+}
+
+let dog = Dog()
+dog.name = "Rocky"
+print(dog.description)  // Output: Dog: ROCKY
+*****************************************************
+2. with get and set
+******************************************************************************
+import Foundation
+class Circle {
+    var radius: Double = 0
+    var area: Double {
+        get {
+            print("parent get")
+            return 3.14 * radius * radius
+        }
+        set {
+             print("parent set")
+            radius = sqrt(newValue / 3.14)
+        }
+    }
+}
+class ColoredCircle: Circle {
+    override var area: Double {
+        get {
+            print("child get")
+            return super.area
+        }
+        set {
+            print("child set")
+            super.area = newValue
+        }
+    }
+}
+let c = ColoredCircle()
+c.area = 314
+print(c.area)   
+*****************************************************
+child set
+parent set
+child get
+parent get
+314.0
+*****************************************************
+3. we are overrriding the computed property and redefining its behaviour to observer in subclass
+*****************************************************
+import Foundation
+You can override a computed property from a superclass and attach property observers (willSet / didSet) in the subclass.
+You must not change it to a stored property. 
+my visualiza = like it does not have memory in superclass,so how it can be initialized or assigned value in subclass 
+*****************************************************
+class Shape {
+    var width = 0.0
+    var height = 0.0
+    var area: Double {
+        get {
+            return width * height
+        }
+        set {
+            self.width = sqrt(newValue)
+            self.height = sqrt(newValue)
+        }
+    }
+}
+class Rectangle: Shape {
+    override var area: Double {
+        willSet {
+            print("New value is \(newValue)")
+        }
+        didSet {
+            print("Old value is \(oldValue)")
+        }
+    }
+}
+let rect = Rectangle()
+rect.width = 4
+rect.height = 5
+print("Initial area: \(rect.area)")
+rect.area = 36
+print("Updated width: \(rect.width)") 
+print("Updated height: \(rect.height)") 
+print("Updated area: \(rect.area)")    
+********************************************
+Initial area: 20.0
+New value is 36.0
+Old value is 20.0
+Updated width: 6.0
+Updated height: 6.0
+Updated area: 36.0
+*****************************************************
+You are not observing actual stored values, but rather:
+Observing when the 'set' of the computed property is triggered.
+same herre also only if you assign something to area it will trigger other changes u do in height and woidth wont trigger observers in subclass.
+if u override comp prop with observer u cant initiliaze there like ( override area:Double = 0) beacuse internally it acts like getter and setter of comp prop.
+*****************************************************
+import Foundation
+class Shape {
+    var width: Double = 0.0
+    var height: Double = 0.0
+    var area: Double {
+        get {
+            return width * height
+        }
+        set {
+            width = sqrt(newValue)
+            height = sqrt(newValue)
+        }
+    }
+}
+class Rectangle: Shape {
+    override var area: Double {
+        willSet {
+            print("Superclass willSet: area = \(newValue)")
+        }
+        didSet {
+            print("Superclass didSet: area changed from \(oldValue) to \(area)")
+        }
+    }
+}
+let rect = Rectangle()
+rect.width = 7
+rect.height = 10
+print(rect.area)
+rect.area = 36
+rect.area = 90
+print(rect.area)
+*****************************************************
+70.0
+Superclass willSet: area = 36.0
+Superclass didSet: area changed from 70.0 to 36.0
+Superclass willSet: area = 90.0
+Superclass didSet: area changed from 36.0 to 90.0
+90.0
+*****************************************************
+You cannot add willSet or didSet to a read-only computed property — because:
+Observers only work on stored properties or computed properties with a set.
+The superclass’s fullName is read-only, so Swift won’t allow observation.
+
+example:class Person {
+    var fullName: String {
+        return "\(firstName) \(lastName)"
+    }
+}
+class Student: Person {
+    override var fullName: String {
+        willSet { ... }
+        didSet { ... }
+    }
+}
+*****************************************************
+error
+********************************* 
+observer -> comp prop,  here observer is completely is replaced with comp prop hence eventhough we make changes in area and print, it wont trigger beacuse in subclass it is not storing area instead it changes width and height.
+***************************************
+import Foundation
+class Shape {
+    var width: Double = 0.0
+    var height: Double = 0.0
+
+    // Stored property with observers
+    var area: Double = 0.0 {
+        willSet {
+            print("Superclass willSet: area = \(newValue)")
+        }
+        didSet {
+            print("Superclass didSet: area changed from \(oldValue) to \(area)")
+        }
+    }
+}
+class Rectangle: Shape {
+    // Overrides with computed property
+    override var area: Double {
+        get {
+            return width * height
+        }
+        set {
+            width = sqrt(newValue)
+            height = sqrt(newValue)
+        }
+    }
+}
+let rect = Rectangle()
+rect.area = 36
+rect.area = 90
+print(rect.area) // 90
+*****************************************************
+to solve this - add super.area because if not added, we just using computed property it does not change area value
+if you change rect.width = 9 and calculate area it wont trigger observers. because only computed prop behaviour is there 
+*****************************************************
+import Foundation
+class Shape {
+    var width: Double = 0.0
+    var height: Double = 0.0
+
+    // Stored property with observers
+    var area: Double = 0.0 {
+        willSet {
+            print("Superclass willSet: area = \(newValue)")
+        }
+        didSet {
+            print("Superclass didSet: area changed from \(oldValue) to \(area)")
+        }
+    }
+}
+class Rectangle: Shape {
+    override var area: Double {
+        get {
+            return width * height
+        }
+        set {
+            width = sqrt(newValue)
+            height = sqrt(newValue)
+            super.area = newValue
+        }
+    }
+}
+let rect = Rectangle()
+rect.area = 36
+rect.area = 90
+print(rect.area)
+*****************************************************
+Superclass willSet: area = 36.0
+Superclass didSet: area changed from 0.0 to 36.0
+Superclass willSet: area = 90.0
+Superclass didSet: area changed from 36.0 to 90.0
+90.0
+*****************************************************
+

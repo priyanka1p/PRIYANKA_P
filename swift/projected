@@ -1,0 +1,137 @@
+@propertyWrapper
+struct SmallNumber {
+     var number: Int
+    var projectedValue: Bool
+    var wrappedValue: Int {
+        get { return number }
+        set {
+            if newValue > 12 {
+                number = 12
+                projectedValue = true
+            } else {
+                number = newValue
+                projectedValue = false
+            }
+        }
+    }
+    init() {
+        self.number = 0
+        self.projectedValue = false
+    }
+}
+struct SomeStructure {
+    @SmallNumber var someNumber: Int
+}
+var someStructure = SomeStructure()
+someStructure.someNumber = 4
+print(someStructure.$someNumber)
+someStructure.someNumber = 55
+print(someStructure.$someNumber)
+**********************************************************************
+import Foundation
+
+@propertyWrapper
+class Logged {
+    var value: String
+    var history: [String] = []
+    var wrappedValue: String {
+        get { value }
+        set {
+            value = newValue
+            history.append(newValue)
+        }
+    }
+    var projectedValue: [String] {
+        history
+    }
+    init(wrappedValue: String) {
+        self.value = wrappedValue
+        self.history.append(wrappedValue)
+    }
+}
+struct User {
+    @Logged var name: String
+}
+var user = User(name: "Priya")
+user.name = "Praba"
+user.name = "Viji"
+print("Current name: \(user.name)")      
+print("Name changes: \(user.$name)")  
+**********************************************************************
+@propertyWrapper
+struct MyWrapper {
+    var wrappedValue: Int
+    var projectedValue: String {
+        return "Hello from $value, \(wrappedValue)"
+    }
+}
+struct my{
+    @MyWrapper var value: Int
+
+}
+var v = my(value:10)
+print(v.$value)   
+**********************************************************************
+struct SomeStructure {
+    static var storedTypeProperty = "Some value."
+    static var computedTypeProperty: Int {
+        return storedTypeProperty.count
+    }
+}
+enum SomeEnumeration {
+    static var storedTypeProperty = "Some value."
+    static var computedTypeProperty: Int {
+        return 6
+    }
+}
+class SomeClass {
+    static var storedTypeProperty = "Some value."
+    static var TypeProperty: Int {
+        return 27
+    }
+    class var overrideableComputedTypeProperty: Int {
+        return 107
+    }
+}
+class some:SomeClass{
+    override class var overrideableComputedTypeProperty:Int{
+        return 888
+    }
+}
+
+print(SomeStructure.computedTypeProperty)
+print(SomeEnumeration.computedTypeProperty)
+print(SomeClass.TypeProperty)
+print(SomeClass.overrideableComputedTypeProperty)
+print(some.overrideableComputedTypeProperty)
+
+**********************************************************************
+struct AudioChannel {
+    static let thresholdLevel = 10
+    static var maxInputLevelForAllChannels = 0
+    var currentLevel: Int = 0 {
+        didSet {
+            if currentLevel > AudioChannel.thresholdLevel {
+                // cap the new audio level to the threshold level
+                currentLevel = AudioChannel.thresholdLevel
+            }
+            if currentLevel > AudioChannel.maxInputLevelForAllChannels {
+                // store this as the new overall maximum input level
+                AudioChannel.maxInputLevelForAllChannels = currentLevel
+            }
+        }
+    }
+}
+var leftChannel = AudioChannel()
+var rightChannel = AudioChannel()
+leftChannel.currentLevel = 7
+print(leftChannel.currentLevel)
+// Prints "7"
+print(AudioChannel.maxInputLevelForAllChannels)
+// Prints "7"
+rightChannel.currentLevel = 11
+print(rightChannel.currentLevel)
+// Prints "10"
+
+print(AudioChannel.maxInputLevelForAllChannels)
+// Prints "10"

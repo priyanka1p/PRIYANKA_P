@@ -1,0 +1,335 @@
+without property wrapper
+**********************************************************************
+struct TwelveOrLess {
+    private var number = 0
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, 12) }
+    }
+}
+struct SmallRectangle {
+    private var _height = TwelveOrLess()
+    private var _width = TwelveOrLess()
+    var height: Int {
+        get { return _height.wrappedValue }
+        set { _height.wrappedValue = newValue }
+    }
+    var width: Int {
+        get { return _width.wrappedValue }
+        set { _width.wrappedValue = newValue }
+    }
+}
+var rectangle = SmallRectangle()
+print(rectangle.height)
+rectangle.height = 10
+print(rectangle.height)
+rectangle.height = 24
+print(rectangle.height)
+**********************************************************************
+12
+**********************************************************************
+wrapper without initialization
+**********************************************************************
+@propertyWrapper
+struct TwelveOrLess {
+    private var number = 0
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, 12) }
+    }
+}
+struct SmallRectangle {
+    @TwelveOrLess var height: Int
+    @TwelveOrLess var width: Int
+}
+var rectangle = SmallRectangle()
+print(rectangle.height)
+rectangle.height = 10
+print(rectangle.height)
+rectangle.height = 24
+print(rectangle.height)
+**********************************************************************
+wrapper with initialization at instance - init at prop defini
+**********************************************************************
+@propertyWrapper
+struct TwelveOrLess {
+    private var number = 0
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, 12) }
+    }
+    init(wrappedValue:Int){
+        self.number = wrappedValue
+    }
+}
+struct SmallRectangle {
+    @TwelveOrLess var height: Int
+    @TwelveOrLess var width: Int
+
+}
+var rectangle = SmallRectangle(height:12 , width:11)
+print(rectangle.width)
+rectangle.height = 10
+print(rectangle.height)
+rectangle.height = 24
+print(rectangle.height)
+**********************************************************************
+wrapper with no init and but with initialization during instance - init at struct where wrapper is used 
+**********************************************************************
+@propertyWrapper
+struct TwelveOrLess {
+    private var number = 0
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, 12) }
+    }
+}
+struct SmallRectangle {
+    @TwelveOrLess var height: Int
+    @TwelveOrLess var width: Int
+    init(height:Int,width:Int){
+        self.height = height
+        self.width = width
+    }
+}
+var rectangle = SmallRectangle(height:12 , width:11)
+print(rectangle.width)
+rectangle.height = 10
+print(rectangle.height)
+rectangle.height = 24
+print(rectangle.height)
+**********************************************************************
+wrapper with deafault and initiazation kn struct
+**********************************************************************
+import Foundation
+// Property Wrapper Definition
+@propertyWrapper
+struct Capitalized {
+    var value: String
+
+    var wrappedValue: String {
+        get { value }
+        set { value = newValue.capitalized }
+    }
+
+    init(wrappedValue: String) {
+        self.value = wrappedValue.capitalized
+    }
+}
+// Model using the property wrapper
+struct User {
+    @Capitalized var firstName: String
+    @Capitalized var lastName: String
+}
+// Another struct using a default value with the property wrapper
+struct Document {
+    @Capitalized var name = "Untitled document"
+}
+func testPropertyWrapper() {
+    var user = User(firstName: "john", lastName: "appleseed")
+    print("User Full Name: \(user.firstName) \(user.lastName)")
+    user.lastName = "sundell"
+    print("Updated User: \(user.firstName) \(user.lastName)")
+
+    var doc = Document()
+    print("Document name: \(doc.name)")
+
+    doc.name = "my notes"
+    print("Updated Document name: \(doc.name)")
+}
+testPropertyWrapper()
+**********************************************************************
+User Full Name: John Appleseed
+Updated User: John Sundell
+Document name: Untitled Document
+Updated Document name: My Notes
+**********************************************************************
+Inside Property wrapper, if you use computed property, use a stored property and init method to initialize the wrapped property.
+**********************************************************************
+@propertyWrapper
+struct InRange {
+    private var value: Int = 0
+
+    var wrappedValue: Int {
+        get { 
+            return max(0, min(value, 100)) 
+        }
+        set {
+            value = newValue
+        }
+    }
+    init(wrappedValue: Int) {
+        self.value = wrappedValue
+    }
+}
+struct Student {
+    @InRange var w: Int // this can be also default
+}
+let student1 = Student(w: 75)
+print(student1.w) // 75
+let student2 = Student(w: 110)
+print(student2.w) // 100
+let student3 = Student(w: -20)
+print(student3.w) // 0
+**********************************************************************
+75
+100
+0
+**********************************************************************
+if you use observer inside wrapper, no need of init and stored property
+**********************************************************************
+import Foundation
+@propertyWrapper
+struct NonNegative {
+    var wrappedValue: Int { // here 
+        didSet {
+            if wrappedValue < 0 {
+                wrappedValue = 0
+            }
+        }
+    }
+}
+struct BankAccount {
+    @NonNegative var balance: Int // works even with default values
+}
+    var account = BankAccount(balance: 100)
+    print("Ini Bal: \(account.balance)") 
+    account.balance = -50
+    print("After withdrawal: \(account.balance)") 
+    account.balance = 30
+    print("After deposit: \(account.balance)")
+**********************************************************************
+Ini Bal: 100
+After withdrawal: 0
+After deposit: 30
+**********************************************************************
+if you are handling with two stored properties inside a wrappedValue  // get only
+**********************************************************************
+import Foundation
+@propertyWrapper
+struct valid {
+    private var loan:Int
+    private var sal:Int
+    
+    var wrappedValue: Bool {
+        return loan <= 2 * sal
+    }
+    init(loan:Int,sal:Int){
+        self.loan = loan
+        self.sal = sal
+    }
+    
+}
+struct BankAccount {
+    @valid(loan:90,sal:45) var check: Bool
+}
+var s = BankAccount()
+print(s.check)//true
+**********************************************************************
+multiple variavles can use that same property which is defined one time in wrapper
+**********************************************************************
+import Foundation
+@propertyWrapper
+struct InRange {
+    private var value: Int
+    private let min: Int
+    private let max: Int
+
+    var wrappedValue: Int {
+        get { Swift.max(min, Swift.min(value, max)) }
+        set { value = newValue }
+    }
+
+    init(wrappedValue: Int, min: Int, max: Int) {
+        self.min = min
+        self.max = max
+        self.value = wrappedValue
+    }
+}
+struct Student {
+    @InRange(wrappedValue: 105, min: 0, max: 100) var math: Int
+    @InRange(wrappedValue: 5, min: 10, max: 50) var science: Int
+    @InRange(wrappedValue: -30, min: -20, max: 20) var arts: Int
+}
+let s = Student()
+print("Math:", s.math)       // 100 → clamped
+print("Science:", s.science) // 10 → clamped
+print("Arts:", s.arts)       // -20 → clamped
+**********************************************************************
+Math: 100
+Science: 10
+Arts: -20
+**********************************************************************
+if you dont want to give the marks scored to the wrapper before instance got created,
+you can add a manual initializer to pass the int values
+**********************************************************************
+import Foundation
+
+@propertyWrapper
+struct InRange {
+    private var value: Int
+    private let min: Int
+    private let max: Int
+
+    var wrappedValue: Int {
+        get { Swift.max(min, Swift.min(value, max)) }
+        set { value = newValue }
+    }
+
+    init(min: Int, max: Int) {
+        self.min = min
+        self.max = max
+        self.value = 0 // default
+    }
+}
+
+struct Student {
+    @InRange(min: 0, max: 100) var math: Int
+    @InRange(min: 10, max: 50) var science: Int
+    @InRange(min: -10, max: 20) var arts: Int
+
+    init(math: Int, science: Int, arts: Int) {
+        self.math = math
+        self.science = science
+        self.arts = arts
+    }
+}
+let s = Student(math: 105, science: 5, arts: -30)
+print("Math:", s.math)       // 100 → clamped
+print("Science:", s.science) 
+print("Arts:", s.arts)      
+**********************************************************************
+Math: 100
+Science: 10
+Arts: -10
+**********************************************************************
+
+@propertyWrapper
+struct SmallNumber {
+    private var maximum: Int
+    private var number: Int
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, maximum) }
+    }
+    init() {
+        maximum = 12
+        number = 0
+    }
+    init(wrappedValue: Int) {
+        maximum = 12
+        number = min(wrappedValue, maximum)
+    }
+    init(wrappedValue: Int, maximum: Int) {
+        self.maximum = maximum
+        number = min(wrappedValue, maximum)
+    }
+}
+struct MixedRectangle {
+    @SmallNumber var height: Int = 1
+    @SmallNumber(maximum: 9) var width: Int = 2
+}
+var mixedRectangle = MixedRectangle()
+print(mixedRectangle.height)
+mixedRectangle.height = 20
+print(mixedRectangle.height)
