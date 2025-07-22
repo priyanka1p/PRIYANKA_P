@@ -1,0 +1,73 @@
+A protocol does not implement behavior (except via extensions); instead, it describes what functionality is expected.
+No, you cannot define stored properties inside a protocol in Swift.
+
+Protocols can be adopted by:
+	•	Classes
+	•	Structs
+	•	Enums
+You can use a protocol like a type:
+func drive(vehicle: Drivable) {
+    vehicle.startEngine()
+}
+
+Using static inside protocol
+means that any type conforming to Identifiable must implement these as type-level members.
+protocol Identifiable {
+    static var idPrefix: String { get }
+    static func generateID() -> String
+}
+struct Student: Identifiable {
+    static var idPrefix: String = "STU"
+
+    static func generateID() -> String {
+        return "\(idPrefix)\(Int.random(in: 1000...9999))"
+    }
+}
+print(Student.idPrefix)
+print(Student.generateID())
+
+We cannot use class keyword inside the protocol for defining a function, use static. In original class, use class instead of static to enable overriding property.
+protocol Identifiable {
+    static var idPrefix: String { get }
+    static func generateID() -> String
+}
+class Student: Identifiable {
+    static var idPrefix: String = "STU"
+
+    class func generateID() -> String {
+        return "\(idPrefix)\(Int.random(in: 1000...9999))"
+    }
+}
+print(Student.idPrefix)
+print(Student.generateID())
+
+AyObject
+Type constraints for classes only
+Collections of class instances:
+Ex1
+Here I am using AnyObject in structure.  Error
+protocol Identifiable:AnyObject {
+    var idPrefix: String { get }
+    static func generateID() -> String
+}
+struct Student:Identifiable{                    // here instead of structure use class
+     var idPrefix: String = "STU"
+    static func generateID() -> String {
+        return "\(Int.random(in: 1000...9999))"
+    }
+}
+var l = Student()
+print(l.idPrefix)
+print(Student.generateID())
+
+REQUIRED
+Use when 
+A protocol declares an initializer.. A class conforms to that protocol.. You want to ensure that all subclasses of that class also implement the initializer.
+Without required, subclasses might forget to implement the initializer — which breaks the protocol conformance.
+
+
+
+
+
+
+
