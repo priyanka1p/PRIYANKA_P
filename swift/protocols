@@ -1,16 +1,43 @@
 A protocol does not implement behavior (except via extensions); instead, it describes what functionality is expected.
-No, you cannot define stored properties inside a protocol in Swift.
-
+you cannot define stored properties inside a protocol in Swift.
+***************************************************************************************************
+You must specify at least a getter in a protocol property requirement. Swift requires access specifiers (get or get set) 
+for protocol properties, because protocols don’t store data, they just define requirements for conforming types.
+protocol SomeProtocol {
+    var mustBeSettable: Int
+} //error
+***************************************************************************************************
 Protocols can be adopted by:
 	•	Classes
 	•	Structs
 	•	Enums
+***************************************************************************************************
 You can use a protocol like a type:
 func drive(vehicle: Drivable) {
     vehicle.startEngine()
 }
+***************************************************************************************************
+MUTATING
+***************************************************************************************************
+U CAN USE MUTATING KEYWORD FOR DECLARING IN FUNCTIONS WITHIN THE PROTOCOL IT WONTS AFFECT THE CLASS METHOD WHILE DEFINING, WHEN U USE THAT METHOD INSIDE THE STRUCT THEN ONLY USE MUTATING KEYWORD O/W NO NEED FOR CLASS 
+protocol Identifiable {
+    var idPrefix: String { get }
+    mutating func generateID() -> String
+}
+struct Student: Identifiable {
+    var idPrefix: String = "STU"
 
+    mutating func generateID() -> String {
+        idPrefix = "banu"
+        return "\(idPrefix)\(Int.random(in: 1000...9999))"
+    }
+}
+var l = Student()
+print(l.idPrefix)
+print(l.generateID())
+***************************************************************************************************
 Using static inside protocol
+***************************************************************************************************
 means that any type conforming to Identifiable must implement these as type-level members.
 protocol Identifiable {
     static var idPrefix: String { get }
@@ -18,35 +45,32 @@ protocol Identifiable {
 }
 struct Student: Identifiable {
     static var idPrefix: String = "STU"
-
     static func generateID() -> String {
         return "\(idPrefix)\(Int.random(in: 1000...9999))"
-    }
-}
+    } }
 print(Student.idPrefix)
 print(Student.generateID())
-
-We cannot use class keyword inside the protocol for defining a function, use static. In original class, use class instead of static to enable overriding property.
+***************************************************************************************************
+We cannot use class keyword inside the protocol for defining a function, use static. 
+In original class, use class instead of static to enable overriding property.
 protocol Identifiable {
     static var idPrefix: String { get }
     static func generateID() -> String
 }
 class Student: Identifiable {
     static var idPrefix: String = "STU"
-
     class func generateID() -> String {
         return "\(idPrefix)\(Int.random(in: 1000...9999))"
-    }
-}
+    } }
 print(Student.idPrefix)
 print(Student.generateID())
-
+***************************************************************************************************
 AyObject
+***************************************************************************************************
 Type constraints for classes only
 Collections of class instances:
-Ex1
-Here I am using AnyObject in structure.  Error
-protocol Identifiable:AnyObject {
+Ex:   Here I am using AnyObject in structure.  Error
+protocol Identifiable:AnyObject { // here instead of this use Any, to get accessed by all types
     var idPrefix: String { get }
     static func generateID() -> String
 }
@@ -59,11 +83,144 @@ struct Student:Identifiable{                    // here instead of structure use
 var l = Student()
 print(l.idPrefix)
 print(Student.generateID())
-
+***************************************************************************************************
 REQUIRED
+***************************************************************************************************
 Use when 
-A protocol declares an initializer.. A class conforms to that protocol.. You want to ensure that all subclasses of that class also implement the initializer.
+A protocol declares an initializer. A class conforms to that protocol.. You want to ensure that all subclasses of that class also implement the initializer.
 Without required, subclasses might forget to implement the initializer — which breaks the protocol conformance.
+protocol Identifiable {
+    var idPrefix: String { get }
+    init(idPrefix:String)
+    init()
+}
+extension Identifiable{
+    init(){
+        self.init(idPrefix : "unknown") // HERE CANNOT DEFINE LIKE idPrefix = “unknown
+//idPrefix is a protocol requirement, not a stored property.
+//In protocol extensions, you can’t initialize stored properties because protocols don’t own storage.
+    }
+}
+struct Student:Identifiable{
+    var idPrefix: String
+    init(idPrefix:String){
+        self.idPrefix = idPrefix
+    }
+}
+var l = Student()
+print(l.idPrefix)
+***************************************************************************************************
+protocol Identifiable {
+    var idPrefix: String { get }
+    init(idPrefix:String)
+}
+extension Identifiable{
+    init(){
+        self.init(idPrefix : "unknown")
+    }
+}
+class Student:Identifiable{
+    var idPrefix: String
+    required init(idPrefix:String){ // without required it is error even in superclass
+        self.idPrefix = idPrefix
+    }
+}
+var l = Student()
+print(l.idPrefix)
+***************************************************************************************************
+SUBCLASS
+protocol Identifiable {
+    var idPrefix: String { get }
+    init(idPrefix:String)
+}
+extension Identifiable{
+    init(){
+        self.init(idPrefix : "unknown")
+    }
+}
+class Student:Identifiable{
+    var idPrefix: String
+    required init(idPrefix:String){
+        self.idPrefix = idPrefix
+    }
+}
+// when using Superclass which conforms to protocol, u have to override the initial form parent class using required override init or just use required init. 
+class person:Student{ 
+    var roll_no:Int?
+    init(){
+        roll_no = nil 
+        super.init(idPrefix: "unknown") 
+    }
+    init(roll_no:Int){
+        self.roll_no = roll_no
+        super.init(idPrefix: "unknown") 
+    }
+    required init(idPrefix: String = "unknown") {
+        self.roll_no = nil
+        super.init(idPrefix: idPrefix)
+    }
+}
+var l = person(roll_no:1)
+print(l.roll_no ?? 0)
+***************************************************************************************************
+// if I use init in protocol without extension 
+protocol Identifiable {
+    var idPrefix: String { get }
+    init(idPrefix:String)
+    init()
+}
+class Student:Identifiable{
+    var idPrefix: String
+    required init(idPrefix:String){
+        self.idPrefix = idPrefix
+    }
+    required init(){
+        idPrefix = "unknown’s "
+    }
+}
+class person:Student{
+    var roll_no:Int?
+     init(){ // here it is mandatory to use required as u r overriding the superclass parents initiative property
+        roll_no = nil 
+        super.init(idPrefix: "unknown") 
+    }
+    init(roll_no:Int){
+        self.roll_no = roll_no
+        super.init(idPrefix: "unknown") 
+    }
+   required init(idPrefix: String = "unknown") {
+        self.roll_no = nil
+        super.init(idPrefix: idPrefix)
+    }
+}
+var l = person(roll_no:1)
+print(l.roll_no ?? 0)
+***************************************************************************************************
+PROTOCOL EXTENSION 
+***************************************************************************************************
+
+
+***************************************************************************************************
+Semantic requirement
+***************************************************************************************************
+a semantic requirement refers to a requirement that is not enforced by the compiler, but is expected behavior that 
+types conforming to a protocol should follow.
+***************************************************************************************************
+// in this example no need to implement the == function as it will be automatically synthesised even when computed property is present
+struct Person: Equatable {
+    let name: String
+    let age: Int
+    var printable:String{
+        return "\(name),\(age)"
+    }
+}
+let l1 = Person(name:"p",age:1)
+let l2 = Person(name:"v",age:2)
+print(l1 == l2)
+***************************************************************************************************
+
+
+***************************************************************************************************
 
 
 
