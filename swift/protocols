@@ -198,7 +198,36 @@ print(l.roll_no ?? 0)
 ***************************************************************************************************
 PROTOCOL EXTENSION 
 ***************************************************************************************************
+struct Person {
+    var name: String
+    let age: Int
+    func hash(into hasher: inout Hasher){
+        hasher.combine(age)
+    }
+}
+extension Person:Hashable{}
+var l1 = Person(name:"p",age:8)
+var l2 = Person(name:"vnj",age:8)
+print(l1.hashValue)
+print(l2.hashValue)
 
+
+protocol My{
+func ans()->String
+}
+struct Person:My {
+    var name: String
+    let age: Int
+    
+}
+extension My{
+    func ans()->String{
+        return "hello"
+    }
+}
+var l1 = Person(name:"p",age:8)
+var l2 = Person(name:"vnj",age:8)
+print(l1.ans())
 
 ***************************************************************************************************
 Semantic requirement
@@ -207,24 +236,770 @@ a semantic requirement refers to a requirement that is not enforced by the compi
 types conforming to a protocol should follow.
 ***************************************************************************************************
 // in this example no need to implement the == function as it will be automatically synthesised even when computed property is present
-struct Person: Equatable {
-    let name: String
+struct Person: Equatable { // if equatable protocol is not written here, then we can’t compare two instances of user defined types.
+    var name: String
     let age: Int
     var printable:String{
         return "\(name),\(age)"
     }
+    mutating func pri()->String{
+        name = "kl"
+        return "\(name),\(age)"
+    }
 }
 let l1 = Person(name:"p",age:1)
-let l2 = Person(name:"v",age:2)
+var l2 = Person(name:"p",age:1)
 print(l1 == l2)
+print(l2.pri())
+print(l1 == l2)
+
+Classes always need static functionality inside even only stored property is present
+struct Box :Equatable{
+    let value: Int
+    private let price = 100
+    init(value:Int){
+        self.value = value
+    }
+}
+
+let a = Box(value: 5)
+let b = Box(value: 5)
+print(a == b) // no need static function 
+//if I replace this with class, error need static functionality 
 ***************************************************************************************************
+HASHABLE
+It is another protocol that is inherited from equatable
+A hash value is an integer that is the same for any two instances that compare equally
+take two instances a and b of the same type, if a == b then a.hashValue == b.hashValue. The reverse is not true
+So here we got hash value same for both instances, but if we will check Equality it will return false, as their every property is not equal to each other, this is called Hash Collision.
+struct Person: Hashable {
+    var name: String
+    let age: Int
+    func hash(into hasher: inout Hasher){
+        hasher.combine(age)
+    }
+}
+var l1 = Person(name:"p",age:8)
+var l2 = Person(name:"vnj",age:8)
+print(l1.hashValue)
+print(l2.hashValue)
+// SAME HASH VALUE
 
+
+Comparable:
+Unlike equatable and washable it cannot auto synthesise it s implementation.
+Func with < must be mandatorily defined, even if u don’t use that operator.
+Can be compared <,>,<=,>=,!=,==
+Once < is implemented, Swift will automatically synthesize the other comparison operators (>, <=, >=, !=, ==) if Equatable is also conformed.
+If you define > or == yourself (like you did with >), that will override Swift’s synthesized behavior.
+It's optional to define them manually unless you need custom logic.
+struct Person: Comparable {
+    var name: String
+    let age: Int
+    static func <(lhs:Person,rhs:Person) -> Bool{
+    print("<")
+        return lhs.age < rhs.age
+    }
+    static func >(_ p1: Person, _ p2: Person) -> Bool {
+        print("uyh>")
+        return p1.name > p2.name
+    }
+}
+var l1 = Person(name:"p",age:82)
+var l2 = Person(name:"vnj",age:8)
+
+Inorder to use .min(), .max, .sorted() use comparable protocol with < function defined. While operating on user defined functions.
+
+enum Direction{ // conform to Comparable to avoid error as u r using sorted function.
+    case north
+    case south
+    case east
+}
+var way = [Direction.north,Direction.south,Direction.east,
+Direction.north]
+for i in way.sorted()
+{
+    print(i)
+} //error Direction must conform to Comparable
+
+print(l1>l2)
+Sendable
+
+Sendable in Swift ensures that a value is safe to use across multiple threads without causing data issues.
+It guarantees that the data won’t be unexpectedly changed while being used elsewhere.
+Swift automatically treats many value types (like Int, String, structs) as sendable; for others, you must mark them explicitly or check them manually.
+
+Sendable closure : it should not capture any mutating variables 
+let sendableClosure = { @Sendable (number: Int) -> String in
+    if number > 0 {
+        return "Positive"
+    } else {
+        return "Zero or Negative"
+    }
+}
+Sendable class
+Class must be marked as final and constants properties she present
+final class Logger: Sendable {
+    let label: String
+    let level: Int
+
+    init(label: String, level: Int) {
+        self.label = label
+        self.level = level
+    }
+}
+
+Class is a reference type (a class), and:
+	•	Classes are not Sendable by default.
+	•	They are shared by reference, meaning multiple threads can access and modify the same instance simultaneously — which is unsafe.
+	•	The Message struct contains this NotSendable class, making the whole struct not sendable.
+class NotSendable {}
+struct Message{
+    let title: String
+    let payload: NotSendable  // Not a sendable type
+}
+ To fix:
+final class NotSendable: Sendable {}  // Must be `final` and its properties must be sendable and immutable
+Or
+class NotSendable {}
+
+struct Message: @unchecked Sendable {
+    let title: String
+    let payload: NotSendable  // ❌ Not a sendable type
+}
+Swift automatically infers the conformance when you define a type that implements the protocol’s requirements, so you don’t have to write them yourself:
+	•	Copyable
+	•	Sendable
+	•	BitwiseCopyable
+You can still write the conformance explicitly, but it doesn’t change how your code behaves. To suppress an implicit conformance, write a tilde (~) before the protocol name in the conformance list:
+struct FileDescriptor: ~Sendable {
+    let rawValue: Int
+}
 
 ***************************************************************************************************
+@moveOnly
+You can move it to a new owner.
+You cannot copy it.
+It enforces single ownership, useful for performance and safety.
+Borrowing
+@moveOnly
+struct FileHandle {
+    let descriptor: Int
+
+    func read() {
+        print("Reading from file with descriptor \(descriptor)")
+    }
+}
+
+func borrowFile(handle: FileHandle) {
+    // Borrowing the handle to read without taking ownership.
+    handle.read()
+}
+
+var file = FileHandle(descriptor: 101)
+borrowFile(handle: file)
+// The original 'file' remains valid after borrowing.
+file.read()
+
+Consuming
+@moveOnly
+struct UniqueSession {
+    let id: String
+
+    func start() {
+        print("Starting session with id \(id)")
+    }
+    
+    func end() {
+        print("Ending session with id \(id)")
+    }
+}
+
+// A consuming function—ownership of `session` is transferred.
+func consumeSession(_ session: consuming UniqueSession) {
+    session.start()
+    session.end()
+}
+
+var session = UniqueSession(id: "AR-2025")
+// Transfer ownership—`session` is consumed by the function.
+consumeSession(session)
+// session.start() // Error: 'session' is no longer valid after being consumed.
+
+
+FAILABLE INITIALIZERS
+
+struct Person {
+    let name: String
+    let age: Int
+
+    init?(name: String, age: Int) {
+        guard age >= 0 else { return nil }
+        self.name = name
+        self.age = age
+    }
+}
+if let person = Person(name: "Priya", age: 25) {
+    print("Valid person:", person.name)
+} else {
+    print("Invalid person")
+}
+
+if let person = Person(name: "John", age: -1) {
+    print("Valid person:", person.name)
+} else {
+    print("Invalid person")  // prints this
+}
+
+FI along with protocol 
+
+protocol validate{
+    init?(name:String,age:Int)
+    }
+struct Person:validate {
+    let name: String
+    let age: Int
+
+    init?(name: String, age: Int) {
+        guard age >= 0 else { return nil }
+        self.name = name
+        self.age = age
+    }
+}
+if let person = Person(name: "Priya", age: 25) {
+    print("Valid person:", person.name)
+} else {
+    print("Invalid person")
+}
+
+if let person = Person(name: "John", age: -1) {
+    print("Valid person:", person.name)
+} else {
+    print("Invalid person")  // prints this
+}
+
+PROTOCOL THAT RETURNS SELF
+protocol validate{
+    func repeats()->Self?
+    }
+struct Person:validate {
+    var name: String
+    var age: Int
+
+    init?(name: String, age: Int) {
+        guard age >= 0 else { return nil }
+        self.name = name
+        self.age = age
+    }
+    func repeats()->Person?{
+        if let person = Person(name:self.name,age:self.age){
+        return person}
+        else{return nil}
+    }
+}
+if let person = Person(name: "Priya", age: 25) {
+    print("Valid person:", person.name)
+} else {
+    print("Invalid person")
+}
+var l = Person(name:"op",age:4)
+var r = l?.repeats()
+print(r?.age ?? "0")
+
+// Define a protocol with a method that returns Self
+protocol Copyable {
+    func copy() -> Self
+}
+
+// A struct that conforms to the Copyable protocol
+struct Document: Copyable {
+    var title: String
+
+    // Returns a copy of itself
+    func copy() -> Document {
+        return Document(title: self.title)
+    }
+}
+
+// Usage
+let original = Document(title: "Swift Guide")
+let duplicate = original.copy()
+
+print("Original Title: \(original.title)")
+print("Copied Title: \(duplicate.title)")
+
+
+Associated type
+protocol Identifiable { 
+    associatedtype Item
+    var idPrefix: Item { get }
+    static func generateID() -> String
+}
+struct Student:Identifiable{                    
+     var idPrefix: String = "STU"
+    static func generateID() -> String {
+        return "\(Int.random(in: 1000...9999))"
+    }
+}
+var l = Student()
+print(l.idPrefix)
+print(Student.generateID())
+
+
+protocol Identifiable { // here instead of this use Any, to get accessed by all types
+    associatedtype Item
+    associatedtype str
+    var idPrefix: Item { get }
+    static func generateID() -> str
+    var say: Item {get}
+} //Item ans str type shd match for respective instance and not between instance
+struct Student:Identifiable{                    // here Item and str : String
+     var idPrefix: String = "STU"
+     var say:String = "hii"
+    static func generateID() -> String {
+        return "\(Int.random(in: 1000...9999))"
+    }
+}
+struct Stu:Identifiable{                    //here Item;Int , str: String
+// TYPEALIAS ITEM = INT NOT MANDATORY
+     var idPrefix = 90
+          var say = 9
+    static func generateID() -> String {
+        return "\(Int.random(in: 1000...9999))"
+    }
+}
+var l = Student()
+print(l.idPrefix)
+print(Student.generateID())
+print(Stu.generateID())
+STU
+3385
+4301
+
+CONDITIONAL CONFORMANCE
+Conditional conformance means a generic type conforms to a protocol only when its type parameter meets some condition.
+struct Box<T> {
+    let value: T
+}
+
+// Box conforms to Equatable only if T is Equatable
+extension Box: Equatable where T: Equatable {}
+
+let a = Box(value: 5)
+let b = Box(value: 5)
+print(a == b) // Only works because Int is Equatable
+
+struct Box<T> {
+    let value: T
+}
+extension Box: Equatable where T: Equatable {}
+struct NotEquatableType { // to fix the error make this structure conforms to equatable
+    let id: Int
+}
+let a = Box(value: NotEquatableType(id: 1))
+let b = Box(value: NotEquatableType(id: 1))
+print(a == b) // error 
+
+CustomStringConvertible
+
+Used for printing the object directly
+let fruits = ["Apple", "Banana", "Cherry"]
+print(fruits)
+Fruits is an array which is printable because it conforms to this protocol
+
+Here is the difference 
+struct Car{ 
+    var brand: String
+    var year: Int
+
+    var description: String {
+        return "\(brand) - \(year)"
+    }
+}
+let car = Car(brand: "Honda", year: 2020)
+print(car) 
+//op:    Car(brand: "Honda", year: 2020)
+
+If you type as  struct Car:CustomStringConvertible {
+} 
+// op: Honda - 2020 description is called // description is keyword
+
+Custom protocol
+protocol CustomStringConvertible{
+    var description: String {
+        get
+    }
+}
+struct Car:CustomStringConvertible {
+    var brand: String
+    var year: Int
+    var description: String {
+        return "\(brand) - \(year)"
+    }
+}
+let car = Car(brand: "Honda", year: 2020)
+print(car.description)
+
+struct User {
+    var name: String
+    var id: Int
+}
+
+extension User: CustomStringConvertible {
+    var description: String {
+        return "User: \(name), ID: \(id)"
+    }
+}
+
+let u = User(name: "Alice", id: 42)
+print(u)
+
+The Error protocol is used to define types that represent errors in Swift’s error-handling system 
+enum NetworkError: Error { case timeout }
+enum ValidationError: Error { case invalidInput }
+let errors: [Error] = [NetworkError.timeout, ValidationError.invalidInput]
+for error in errors {
+    print(error)
+}
+protocol Drawable {
+    func draw()
+}
+struct Circle: Drawable {
+    func draw() { print("Drawing Circle") }
+}
+struct Square: Drawable {
+    func draw() { print("Drawing Square") }
+}
+let shapes: [Drawable] = [Circle(), Square()]
+for shape in shapes {
+    shape.draw()
+}
+
+PROTOCOL INHERITANCE
+protocol Animal {
+    func eat()
+}
+
+protocol Pet: Animal {
+    func play()
+}
+struct Dog: Pet {
+    func eat() {
+        print("Dog eats food")
+    }
+    func play() {
+        print("Dog plays fetch")
+    }
+}
+
+protocol Drivable {
+    func drive()
+}
+
+protocol Flyable {
+    func fly()
+}
+
+protocol FlyingCar: Drivable, Flyable {}
+
+struct JetCar: FlyingCar {
+    func drive() {
+        print("Driving on road")
+    }
+    func fly() {
+        print("Flying in sky")
+    }
+}
+protocol Container {
+    associatedtype Item
+    func add(_ item: Item)
+}
+
+protocol CountableContainer: Container {
+    var count: Int { get }
+}
+
+struct IntStack: CountableContainer {
+    private var items = [Int]()
+    
+    func add(_ item: Int) {
+        items.append(item)
+    }
+
+    var count: Int {
+        items.count
+    }
+}
+Named inherits Identifiable and provides a default implementation for id.
+protocol Identifiable {
+    var id: String { get }
+}
+protocol Named: Identifiable {
+    var name: String { get }
+}
+extension Named {
+    var id: String {
+        return "ID-\(name)"
+    }
+}
+struct User: Named {
+    let name: String
+}
+let user = User(name: "Priya")
+print(user.id)  // Prints: ID-Priya
+PROTOCOL COMPOSITION
+Protocol Composition in Swift means combining multiple protocols into one requirement using &
+Protocol compositions don’t define any new protocol types.
+
+
+
+protocol Flyable {
+    func fly()
+}
+
+protocol Landable {
+    var place:String{get}
+    func land()
+}
+
+func testFlight(_ object: Landable ) { //  Landable & Flyable
+    object.fly() // error either remove or to use this use protocol composition like Landable & Flyable
+    object.land()
+    print(object.place)
+}
+
+struct Plane: Flyable, Landable {
+    var place = "tamilnadu"
+    func fly() { print("Plane is flying") }
+    func land() { print("Plane is landing") }
+}
+struct Drone: Flyable, Landable {
+    var place = "kerala"
+    func fly() { print("Drone flying") }
+    func land() { print("Drone landing") }
+}
+let drone = Drone()
+let plane = Plane()
+testFlight(drone) // works alone
+testFlight(plane) 
+
+// to store this in a array use any with protocol composition
+let flyingObjects: [any Flyable & Landable] = [Plane(), Drone()] // if you use some instead of any error. type of expression is ambiguous without more context orelse don’t use either some or any
+
+Some: 	•	Accept any single type that conforms to both Flyable and Landable. 
+Any : An array of values conforming to both protocols, where each element can be of a different type, but accessed through protocol interfaces. In our example one is drone type and other is plane type
+
+let flyingObjects: [some Flyable & Landable] = [plane, pl2] // valid
+let flyingObjects: [some Flyable & Landable] = [plane, drone] // invalid
+let flyingObjects: [any Flyable & Landable] = [plane, drone] // valid
 
 
 
 
+Protocol as types
 
+1.protocol as a generic constant
+protocol Greetable {
+    func greet()
+}
+struct Person: Greetable {
+    func greet() {
+        print("Hello from Person!")
+    }
+}
+func greetSomeone<T: Greetable>(_ value: T) {
+    value.greet()
+}
+let p = Person()
+greetSomeone(p)  passing instance into function which is of Greetable type and to run greet()
+
+2. Opaque type
+Used to hide the concrete type returned by a function, while still guaranteeing protocol conformance.
+protocol Greetable {
+    func greet()
+}
+struct Robot: Greetable {
+    func greet() {
+        print("Beep boop.")
+    }
+}
+func makeGreeter() -> Greetable {
+    return Robot()
+}
+var p = makeGreeter()
+p.greet()
+
+3.Boxed type
+protocol Greetable {
+    func greet()
+}
+struct Dog: Greetable {
+    func greet() {
+        print("Woof!")
+    }
+}
+struct Alien: Greetable {
+    func greet() {
+        print("Zorp!")
+    }
+}
+func greetEveryone(_ greeters: [any Greetable]) { 
+    for greeter in greeters {
+        greeter.greet()
+    }
+}
+let d = Dog()
+let a = Alien()
+greetEveryone([d, a])
+
+
+DEPENDENCY INJECTION
+Dependency injection with protocols means you define a required behavior using a protocol, and then "inject" or pass in an object that conforms to that protocol, instead of hardcoding a specific type.
+
+as? is called a conditional downcast operator.
+Try to treat this value as a different type. If it works, give me that value as the new type. If not, give me nil
+as? is for safe type conversion.
+It’s used with optionals and avoids crashes.
+Often paired with if let or guard let to safely unwrap.
+let item: Any = "Hello"
+if let stringItem = item as? String {
+    print("It's a string: \(stringItem)")
+} else {
+    print("Not a string")
+}
+protocol Greetable {
+    func greet()
+}
+protocol ungreet{
+}
+struct Dog: Greetable {
+    func greet() {
+        print("Woof!")
+    }
+}
+struct Alien: ungreet {
+    func greet() {
+        print("Zorp!")
+    }
+}
+let d = Dog()
+let a = Alien()
+
+if let dog = a as? Greetable {
+    print("It's an animal")
+}
+else{
+    print("try differnt")
+}
+
+protocol HasArea {
+    var area: Double { get }
+}
+class Circle: HasArea {
+    let pi = 3.1415927
+    var radius: Double
+    var area: Double { return pi * radius * radius }
+    init(radius: Double) { self.radius = radius }
+}
+class Country: HasArea {
+    var area: Double
+    init(area: Double) { self.area = area }
+}
+class Animal {
+    var legs: Int
+    init(legs: Int) { self.legs = legs }
+}
+let objects: [AnyObject] = [
+    Circle(radius: 2.0),
+    Country(area: 243_610),
+    Animal(legs: 4)
+]
+for object in objects {
+    if let objectWithArea = object as? HasArea {
+        print("Area is \(objectWithArea.area)")
+    } else {
+        print("Something that doesn't have an area")
+    }
+}
+Area is 12.5663708
+Area is 243610.0
+Something that doesn't have an area
+
+
+...Program finished with exit code 0
+Press ENTER to exit console.
+PROTOCOL EXTENSION
+
+
+protocol Greetable {
+    var name: String { get }
+}
+extension Greetable {
+    func greet(nam:String) {
+        print("Hello my name is \(nam).") // OR JUST WRITE NAME WITH NO PARAMETER VALID
+    }
+}
+struct Person: Greetable {
+    let name: String
+}
+let p = Person(name: "Priya")
+p.greet(nam:p.name) 
+
+//extensions’s greet is ignored, also u have to define behaviour in extension o/w error
+protocol Greetable {
+    var name: String { get }
+}
+extension Greetable {
+    func greet(nam:String)->String{
+    print("hello")
+    return " "}
+}
+struct Person: Greetable {
+    let name: String
+    func greet(nam:String)->String{
+        return "priyanka\(nam)"
+    }
+
+}
+let p = Person(name: "Priya")
+print(p.greet(nam:p.name))  // Output: Hello my name is Priya.
+
+Providing default implementations
+protocol Greetable {
+    var name: String { get }
+}
+extension Greetable {
+    var place:String{
+         "VPM" /can only return cannot store
+}
+struct Person: Greetable {
+    let name: String
+
+}
+let p = Person(name: "Priya")
+print(p.place) 
+
+Adding constraints to extension
+extension Collection where Element: Equatable {
+    func allEqual() -> Bool {
+        for element in self {
+            if element != self.first {
+                return false
+            }
+        }
+        return true
+    }
+}
+func equal(say: some Collection) {
+    print(say)
+}
+let equalNumbers = [100, 100, 100, 100, 100]
+let differentNumbers = [100, 100, 200, 100, 200]
+equal(say:equalNumbers)
+print(equalNumbers.allEqual())
+print(differentNumbers.allEqual())
+//[100, 100, 100, 100, 100]
+true
+false
 
 
