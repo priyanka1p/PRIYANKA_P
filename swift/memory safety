@@ -1,0 +1,77 @@
+func balance(_ x: inout Int, _ y: inout Int) {
+    print(x)
+}
+var myNumber = 20
+balance(&myNumber, &myNumber) 
+//error conflicting access to memory
+***************************************************************************************************************************
+var stepSize = 1
+var gl = 130
+func increment(_ number: inout Int) {
+    number += gl
+}
+increment(&stepSize) 
+print(stepSize)  //131 fine
+***************************************************************************************************************************
+var stepSize = 1
+func increment(_ number: inout Int) {
+    number += stepSize
+}
+increment(&stepSize)//error read and write happening simultaneously at same emory loc
+***************************************************************************************************************************
+//fix use temp var 
+func increment(_ number: inout Int) {
+    number += stepSize
+}
+var stepSize = 1
+var copy = stepSize
+increment(&copy)
+stepSize = copy
+***************************************************************************************************************************
+infix operator <^>
+func <^> (_ x: inout Int, _ y: inout Int) {
+    let sum = x + y
+    x = sum / 2
+    y = sum - x
+}
+var p1 = 42
+var p2 = 30
+p1 <^> p1 // same conflict as balance(&p1, &p1)
+***************************************************************************************************************************
+Self and mutating
+Strcut: 
+var oscar = Player(name: "Oscar", health: 10, energy: 10)
+var maria = Player(name: "Maria", health: 5, energy: 10)
+oscar.shareHealth(with: &maria) 
+oscar.shareHealth(with: &oscar) //  Error: conflicting accesses to oscar
+Also difdferent properties of the same instance cannot be accessed simultaneously. As they are value types
+balance(&oscar.health,&oscar.energy)
+//fix
+var teammate = oscar
+oscar.shareHealth(with: &teammate)
+oscar.health = teammate.health
+***************************************************************************************************************************
+If I use class:-
+	•	teammate and self are pointing to the same object (oscar)
+	•	You're trying to mutate two different properties (health) of the same object via two overlapping inout accesses
+	•	Swift detects overlapping exclusive accesses and triggers a runtime error
+***************************************************************************************************************************
+In class
+balance(&oscar.health,&oscar.energy) this is valid 
+But this is not valid
+balance(&oscar.health,&oscar.health) not valid
+***************************************************************************************************************************
+In structure 
+In global scope 
+balance(&oscar.health,&oscar.health) not valid
+balance(&oscar.health,&oscar.energy)  not valid 
+In local scope
+func someFunction() {
+    var oscar = Player(name: "Oscar", health: 10, energy: 10)
+    balance(&oscar.health, &oscar.energy) // oK
+}
+someFunction()
+Like this 
+    balance(&oscar.health, &oscar.energy) // OK
+    balance(&oscar.health, &oscar.health) // not valid
+***************************************************************************************************************************
