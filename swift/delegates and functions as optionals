@@ -1,0 +1,183 @@
+DELEGATION
+*******************************************************************************************
+Delegates are a design pattern that allows one object to send messages to another object when a specific event happens.
+One class has a delegate property (usually a protocol type).
+Another class conforms to the protocol and does the actual work.
+The first class calls the delegate’s method when needed.
+*******************************************************************************************
+protocol PrinterDelegate {
+    func didFinishPrinting()
+}
+class Printer {
+    var delegate: PrinterDelegate?
+    func printDocument() {
+        print("Printing document...")
+        delegate?.didFinishPrinting()
+    }
+}
+class PrintManager: PrinterDelegate {
+    func didFinishPrinting() {
+        print("Print job completed!")
+    }
+}
+let printer = Printer()
+let manager = PrintManager()
+printer.printDocument()
+printer.delegate = manager
+printer.printDocument()
+*******************************************************************************************
+//Printing document...
+Printing document...
+Print job completed!
+*******************************************************************************************
+protocol classroom{
+    var students:[String]{get}
+    var count:Int{get}
+}
+struct sectionA{
+    static var total = 10
+    var present:classroom? // here instead of present we can give the same name count as protocol’s count
+}
+struct attendance:classroom{
+    var students:[String]
+    var count:Int{
+        return students.count 
+    }
+}
+var s = sectionA()
+var a = attendance(students:["priya","praba","viji"])
+s.present = a
+print(s.present?.count ?? "not")
+let leave = sectionA.total - (s.present?.count ?? 0)
+print("Absent: \(leave)")
+*******************************************************************************************
+	Protocols define a set of rules, while delegates allow one object to communicate with another based on these rules.
+	Delegates are often used for handling events, passing data.
+*******************************************************************************************
+*******************************************************************************************
+*******************************************************************************************
+
+
+    
+*******************************************************************************************
+OPTIONAL FUNCTION
+*******************************************************************************************
+import Foundation
+@objc protocol DataSource {
+    @objc optional func fetchData() -> String
+    @objc optional var name: String { get }
+}
+class MyData: NSObject, DataSource {
+    func fetchData() -> String {
+        return "Data loaded"
+    }
+}
+func useDataSource(_ source: DataSource) {
+    if let data = source.fetchData?() {
+        print("Fetched: \(data)")
+    } else {
+        print("No data")
+    }
+    if let name = source.name {
+        print("Name: \(name)")
+    } else {
+        print("No name provided")
+    }
+}
+let obj = MyData()
+useDataSource(obj)
+*******************************************************************************************
+protocol Greeter {
+    func greet()
+    func farewell()
+}
+extension Greeter {
+    func farewell() {
+        print("Goodbye!")  // default implementation
+    }
+}
+struct Person: Greeter {
+    func greet() {
+        print("Hello!")
+    }
+}
+var per = Person()
+*******************************************************************************************
+OPTIONAL RETURN TYPE OF FUNCTION
+*******************************************************************************************
+protocol Greeter {
+    func greet(quote:String)-> String?
+}
+struct Person: Greeter {
+    func greet(quote:String)->String? {
+        if quote.count > 4{
+        return "hello \(quote)"
+        }
+        return nil
+    }
+}
+var per = Person()
+if let str = per.greet(quote:"priya")
+{print(str)
+}
+else{
+    print("no quote")
+}
+*******************************************************************************************
+RETURN TYPE AS TUPLE
+******************************************************************************************
+protocol Greeter {
+    func greet(quote:String)-> (String,String)?
+    func farewell()
+}
+extension Greeter {
+    func farewell() {
+        print("Goodbye!")  // default implementation
+    }
+}
+struct Person: Greeter {
+    func greet(quote:String)->(String,String)? {
+        if quote.count > 4{
+        return ("hello \(quote)","hi\(quote)")
+        }
+        return nil
+    }
+}
+var per = Person()
+if let (str1, str2) = per.greet(quote:"priya")
+{print(str1,str2)
+}
+else{
+    print("no quote")
+}
+*******************************************************************************************
+ASSIGNING FUNCTION TO REFERENCE VARIBALE
+*******************************************************************************************
+func sayHello() {
+    print("Hello!")
+}
+func sayGoodbye() {
+    print("Goodbye!")
+}
+struct TaskHandler {
+    var action: (() -> Void)?  // Optional function reference
+}
+var handler = TaskHandler()
+handler.action = sayHello  // assign the function to the variable
+handler.action?()          // call it only if it's not nil
+handler.action = nil       // now the function is “absent”
+handler.action?() 
+*******************************************************************************************
+OPTIONAL CLOSURES BEHAVE LIKE FUNCTIONS
+*******************************************************************************************
+protocol my{
+    var fn: ((_ name:String)->Void)?{get}
+}
+struct person:my{
+    var name:String 
+    var fn:((_ name:String)->Void)?
+}
+var r = person(name:"Priya",fn:{name in print("hello \(name)")})
+print(r.name)
+r.fn?(r.name)
+*******************************************************************************************
