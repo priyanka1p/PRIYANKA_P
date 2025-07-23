@@ -1,0 +1,591 @@
+Generic code enables you to write flexible, reusable functions and types that can work with any type, subject to requirements that you define. You can write code that avoids duplication and expresses its intent in a clear, abstracted manner.
+***************************************************************************************************************************
+func greet<T>(a:T){
+    print( a )
+}
+greet(a:"Hi i am priyanka")
+***************************************************************************************************************************
+func greet<T>()->T{
+    return "Hi i am priyanka" as! T
+}
+print(greet())
+***************************************************************************************************************************
+func greet<T:Numeric>(num: inout T){ // without numeric T do not know to use binary operator
+    num = num + 5
+}
+var num = 5
+print(greet(num:&num))
+print(num)
+***************************************************************************************************************************
+func greet<T:Numeric>(num: inout T, _ closure:(Int)->String){
+    num = num + 5
+    print(closure(5))
+}
+var num = 5
+greet(num:&num){
+    a in "a"
+}
+***************************************************************************************************************************
+if you are passing num to the closure, then use input type as T//o/w error bcoz u assigned num type as T so maintain generic
+func greet<T:Numeric>(num: inout T, _ closure:(T)->Void){
+    num = num + 5
+    closure(num)
+}
+var num = 5
+greet(num:&num){
+    a in print(a) 
+}
+***************************************************************************************************************************
+func swapTwoValues<T>(_ a: inout T, _ b: inout T) {
+    let temporaryA = a
+    a = b
+    b = temporaryA
+}
+var someInt = 3
+var anotherInt = 107
+swapTwoValues(&someInt, &anotherInt)
+var someString = "hello"
+var anotherString = "world"
+swapTwoValues(&someString, &anotherString)
+***************************************************************************************************************************
+T - type parameter type parameter is replaced with an actual type whenever the function is called. 
+***************************************************************************************************************************
+A stack is an ordered set of values, similar to an array, but with a more restricted set of operations than Swift’s Array type.
+***************************************************************************************************************************
+struct Stack<Element> {
+    var items: [Element] = []
+    mutating func push(_ item: Element) {
+        items.append(item)
+    }
+    mutating func pop() -> Element {
+        return items.removeLast()
+    }
+}
+var stackOfStrings = Stack<String>()
+stackOfStrings.push("uno")
+stackOfStrings.push("dos")
+stackOfStrings.push("tres")
+stackOfStrings.push("cuatro")
+let fromTheTop = stackOfStrings.pop()
+extension Stack {
+    var topItem: Element? {
+        return items.isEmpty ? nil : items[items.count - 1]
+    }
+}
+if let topItem = stackOfStrings.topItem {
+    print("The top item on the stack is \(topItem).")
+}
+
+
+
+struct classroom<Element>{
+    var student:[Element]
+    subscript(index:Int)->Element{
+        get{
+            return student[index]
+        }
+        set{
+            student[index] = newValue
+        }
+    }
+    mutating func append(ele:Element){
+        student.append(ele)
+    }
+}
+extension classroom{
+    func first()->Element?{
+        return student.first
+    }
+}
+var t = classroom(student:["pri"])  
+print(t.first() ?? "no students")
+t.append(ele:"gayu")
+
+***************************************************************************************************************************
+TYPE CONSTRAINT
+***************************************************************************************************************************
+Type constraints specify that a type parameter must inherit from a specific class, or conform to a particular protocol or protocol composition.
+***************************************************************************************************************************
+Normal func
+func findIndex(ofString valueToFind: String, in array: [String]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+let strings = ["cat", "dog", "llama", "parakeet", "terrapin"]
+if let foundIndex = findIndex(ofString: "llama", in: strings) {
+    print("The index of llama is \(foundIndex)")
+}
+***************************************************************************************************************************
+Generic function which uses == operator
+This will not compile because not every type in swift can be compared with == operator
+***************************************************************************************************************************
+func findIndex<t>(of valueToFind: t, in array: [t]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+let doubleIndex = findIndex(of: 9.3, in: [3.14159, 0.1, 0.25])
+let stringIndex = findIndex(of: "Andrea", in: ["Mike", "Malcolm", "Andrea"])
+//error
+***************************************************************************************************************************
+//To fix the error use equatable protocol in type parameter
+func findIndex<t:Equatable>(of valueToFind: t, in array: [t]) -> Int? {
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+let doubleIndex = findIndex(of: 9.3, in: [3.14159, 0.1, 0.25])
+let stringIndex = findIndex(of: "Andrea", in: ["Mike", "Malcolm", "Andrea"])
+print(doubleIndex ?? "not valid", stringIndex ?? "nilf")
+***************************************************************************************************************************
+ASSOCIATED TYPES
+ An associated type gives a placeholder name to a type that’s used as part of the protocol.
+***************************************************************************************************************************
+protocol my{
+associatedtype type
+var student:[type]{get}
+subscript(index:Int)->type {get set}
+mutating func append(ele:type)
+func first() -> type?
+}
+struct classroom<Element>:my{
+    var student:[Element]
+    subscript(index:Int)->Element{
+        get{
+            return student[index]
+        }
+        set{
+            student[index] = newValue
+        }
+    }
+    mutating func append(ele:Element){
+        student.append(ele)
+    }
+}
+extension classroom{
+    func first()->Element?{
+        return student.first
+    }
+}
+var t = classroom(student:["pri","pra"])  
+print(t.first() ?? "no student")
+t.append(ele:"gayu")
+
+
+
+
+protocol Container {
+    associatedtype Item
+    mutating func append(_ item: Item)
+    var count: Int { get }
+    subscript(i: Int) -> Item { get }
+}
+struct IntStack: Container {
+    var items: [Int] = []
+    mutating func push(_ item: Int) {
+        items.append(item)
+    }
+    mutating func pop() -> Int {
+        return items.removeLast()
+    }
+    typealias Item = Int
+    mutating func append(_ item: Int) {
+        self.push(item)
+    }
+    var count: Int {
+        return items.count
+    }
+    subscript(i: Int) -> Int {
+        return items[i]
+    }
+}
+***************************************************************************************************************************
+Generic stack
+***************************************************************************************************************************
+struct Stack<Element>: Container {
+    // original Stack<Element> implementation
+    var items: [Element] = []
+    mutating func push(_ item: Element) {
+        items.append(item)
+    }
+    mutating func pop() -> Element {
+        return items.removeLast()
+    }
+    // conformance to the Container protocol
+    mutating func append(_ item: Element) {
+        self.push(item)
+    }
+    var count: Int {
+        return items.count
+    }
+    subscript(i: Int) -> Element {
+        return items[i]
+    }
+}
+***************************************************************************************************************************
+Extending the existing type to specify an associated type
+extension Array: Container {}
+***************************************************************************************************************************
+Add type constraint to an associated type
+***************************************************************************************************************************
+protocol Container {
+    associatedtype Item: Equatable
+    mutating func append(_ item: Item)
+    var count: Int { get }
+    subscript(i: Int) -> Item { get }
+}
+
+protocol my{
+associatedtype type:Comparable
+var student:[type]{get}
+subscript(index:Int)->type {get set}
+mutating func append(ele:type)
+}
+struct classroom<Element:Comparable>:my{
+    var student:[Element]
+    subscript(index:Int)->Element{
+        get{
+            return student[index]
+        }
+        set{
+            student[index] = newValue
+        }
+    }
+    mutating func append(ele:Element){
+        student.append(ele)
+    }
+}
+
+var t = classroom(student:["pri","pra"])  
+t.append(ele:"gayu")
+print(t.student.sorted())
+
+***************************************************************************************************************************
+Using a protocol in its associated type’s constraint
+***************************************************************************************************************************
+import Foundation
+protocol Container {
+    associatedtype Item: Equatable
+    mutating func append(_ item: Item)
+    var count: Int { get }
+    subscript(i: Int) -> Item { get }
+}
+protocol SuffixableContainer: Container {
+    associatedtype Suffix: SuffixableContainer where Suffix.Item == Item
+    func suffix(_ size: Int) -> Suffix
+}
+extension Stack:SuffixableContainer{
+    func suffix(_ size: Int) -> Stack<Element> {
+        var result = Stack<Element>()
+        let startIndex = max(0, count - size)
+        for index in startIndex..<count {
+            result.append(self[index])
+        }
+        return result
+    }
+}
+struct Stack<Element: Equatable> {
+    private var items: [Element] = []
+    mutating func push(_ item: Element) {
+        items.append(item)
+    }
+    mutating func pop() -> Element {
+        return items.removeLast()
+    }
+    mutating func append(_ item: Element) {
+        self.push(item)
+    }
+    var count: Int {
+        return items.count
+    }
+    subscript(i: Int) -> Element {
+        return items[i]
+    }
+    
+}
+var stackOfInts = Stack<Int>()
+stackOfInts.append(10)
+stackOfInts.append(20)
+stackOfInts.append(30)
+let suffix = stackOfInts.suffix(2)
+print("Suffix stack:")
+for i in 0..<suffix.count {
+    print(suffix[i])
+}
+***************************************************************************************************************************
+protocol Feed{
+    associatedtype A where A:Animal
+    func feed( _ animal:A)
+    }
+protocol Animal{
+    func makeSound()
+}
+struct Dog:Animal{
+    func makeSound(){
+        print("barkkk")
+    }
+}
+struct call<T:Animal>:Feed{
+    func feed(_ animal :T) {
+        animal.makeSound()
+        print("Animal is feeded")
+    }
+}
+var d = Dog()
+var f = call<Dog>()
+f.feed(d)
+***************************************************************************************************************************
+
+***************************************************************************************************************************
+GENERIC WHERE CLAUSE
+***************************************************************************************************************************
+func findIndex<t>(of valueToFind: t, in array: [t]) -> Int? where t:Equatable{
+    for (index, value) in array.enumerated() {
+        if value == valueToFind {
+            return index
+        }
+    }
+    return nil
+}
+let doubleIndex = findIndex(of: 9.3, in: [3.14159, 0.1, 0.25])
+let stringIndex = findIndex(of: "Andrea", in: ["Mike", "Malcolm", "Andrea"])
+print(doubleIndex ?? "not valid", stringIndex ?? "nilf")
+***************************************************************************************************************************
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+    subscript(index:Int) ->Item{get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+    subscript (index:Int)->String{
+        return students[index]
+    }
+}
+func match<T1:classroom,T2:classroom>(_ a : T1, _ b :T2) ->Bool where T1.Item == T2.Item, T1.Item: Equatable{
+    if a.count == b.count{
+        return true
+    }
+    return false
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["jai","pra","viji"])
+print(a.students,a.count,a[2])
+print(match(a,b))
+***************************************************************************************************************************
+Writing the same function in extension 
+***************************************************************************************************************************
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+    subscript(index:Int) ->Item{get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+    subscript (index:Int)->String{
+        return students[index]
+    }
+}
+extension classroom{ // can also write like this  extension Container where Item: Equatable {
+//
+func match<T1:classroom>(_ a : T1) ->Bool where T1.Item == Item, Item:Equatable{
+    if a.count == count{
+        return true
+    }
+    return false
+}
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["pri","ll","vijvi"]
+print(a.students,a.count,a[2])
+print(b.match(c))
+***************************************************************************************************************************
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+    subscript(index:Int) ->Item{get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+    subscript(index:Int)->String{
+        return students[index]
+    }
+}
+extension classroom{
+    func check(_ source:Item) -> Bool where Item:Equatable{
+        for i in students{
+            if(i == source){
+                return true
+            }
+        }
+        return false
+    }
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["jai","pra","viji","kl"])
+print(a.students,a.count,a[2])
+print(a.check("prifr")):["jai","pra","viji","kl"])
+print(a.students,a.count,a[2])
+print(a.match(c))
+***************************************************************************************************************************
+A contextual where clause is a where clause added in places where there are already generic types in context, 
+even if you're not declaring new generic parameters.
+***************************************************************************************************************************
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+    subscript(index:Int) ->Item{get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+    subscript(index:Int)->String{
+        return students[index]
+    }
+}
+extension classroom{
+    func check(_ source:Item) -> Bool where Item:Equatable{ //upon contextual
+        for i in students{
+            if(i == source){
+                return true
+            }
+        }
+        return false
+    }
+  func cal()->Int where Item == String{ // upon contextual
+    return count
+}
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["jai","pra","viji","kl"])
+print(a.students,a.count,a[2])
+print(a.check("prifr"))
+print(a.cal())
+***************************************************************************************************************************
+protocol classroom: Sequence {
+    associatedtype Item
+    var students: [Item] { get set }
+    var count: Int { get }
+    subscript(index: Int) -> Item { get }
+
+    // Associated type with generic where clause
+    associatedtype Iterator: IteratorProtocol where Iterator.Element == Item
+    func makeIterator() -> Iterator
+}
+struct A: classroom {
+    var students: [String] = []
+    var count: Int {
+        students.count
+    }
+    subscript(index: Int) -> String {
+        students[index]
+    }
+    func makeIterator() -> IndexingIterator<[String]> {
+        students.makeIterator()
+    }
+    typealias Iterator = IndexingIterator<[String]>
+}
+let a = A(students: ["pri", "pra", "viji"])
+for student in a {
+    print(student)   // pri, pra, viji
+}
+***************************************************************************************************************************
+import Foundation 
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+    subscript(index:Int) ->Item{get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+}
+extension classroom{ // declared and then defined through extension
+    subscript (index:Int)->Item {
+        return students[index]
+    }
+}
+extension classroom{ //defining generic type inside extension
+func match<T1:classroom>(_ a : T1) ->Bool where T1.Item == Item, Item:Equatable{
+    if a.count == count{
+        return true
+    }
+    return false
+}
+}
+extension classroom where Item == String{
+    func print_caps(_ source:Item){
+            print(source.capitalized)
+    }
+}
+extension classroom where Item == String{//contextual where clause on checking associated type
+    func check(_ source:Item) -> Bool where Item:Equatable{
+        for i in students{
+            if(i == source){
+                return true
+            }
+        }
+        return false
+    }
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["jai","pra","viji","kl"])
+print(a.students,a.count,a[2])
+print(a.match(c))
+a.print_caps(c.students[0])
+***************************************************************************************************************************
+Generic subscript
+***************************************************************************************************************************
+import Foundation 
+protocol classroom{
+    associatedtype Item
+    var students:[Item]{get set}
+    var count:Int {get}
+}
+struct A:classroom{
+    var students:[String] = []
+    var count:Int{
+        students.count
+    }
+    subscript<t>(index:t)->String where t == Int{
+        return students[index]
+    }
+}
+var a = A(students:["pri","pra","viji"])
+var b = A(students:["pri","pra","viji"])
+var c = A(students:["jai","pra","viji","kl"])
+print(c[0])
+***************************************************************************************************************************
