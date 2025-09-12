@@ -1,0 +1,491 @@
+
+import UIKit
+
+class HomeViewController: UIViewController, URLSessionDataDelegate {
+    
+    @IBOutlet weak var emailLabel: UILabel!
+    @IBOutlet weak var contentView: UIView!
+    @IBOutlet weak var place: UITextField!
+    
+    var email: String?
+    let imageView = UIImageView()
+    var aspectRatioConstraint: NSLayoutConstraint?
+    
+    // This will store the downloaded data
+    var receivedData = Data()
+    let shared = KeychainManager()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        emailLabel.text = email
+        let credentials = shared.getCredentials()
+        place.text = credentials.place
+        
+        // Setup UIImageView
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .yellow
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Add imageView inside the scroll view’s contentView
+        contentView.addSubview(imageView)
+        
+        // Auto Layout constraints
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: place.bottomAnchor, constant: 20),
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            //imageView.heightAnchor.constraint(equalToConstant: 200)
+        ])
+        
+        // Add Logout button on right
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Logout",
+            style: .plain,
+            target: self,
+            action: #selector(logoutTapped)
+        )
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "Update place",
+            style: .plain,
+            target: self,
+            action: #selector(updatePassword)
+        )
+        fetchImage()
+    }
+    @objc func updatePassword(){
+        guard let newPlace = place.text, !newPlace.isEmpty  else { print("enter some place"); return }
+        
+        let success = shared.updateCredentials(newPlace: newPlace)
+        if success {
+            print("Place updated successfully!")
+        } else {
+            print("Failed to update place.")
+        }
+    }
+
+    @objc func logoutTapped() {
+            // Delete email from Keychain
+            shared.deleteCredentials()
+            
+            // Update login state
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+
+            // Go back to login screen
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            let loginVC = storyboard.instantiateViewController(withIdentifier: "loginVC") as! ViewController
+            let nav = UINavigationController(rootViewController: loginVC)
+
+            // Use the active window scene
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController = nav
+                window.makeKeyAndVisible()
+            }
+
+        }
+    
+    func fetchImage() {
+        let url = URL(string: "https://i.pinimg.com/originals/42/90/74/42907405f16ba768786a616095a8cfb2.jpg")!
+        
+        // Create a URLSession with self as delegate
+        let sessionConfig = URLSessionConfiguration.default
+        let session = URLSession(configuration: sessionConfig, delegate: self, delegateQueue: nil)
+        
+        // Create a data task
+        let task = session.dataTask(with: url)
+        task.resume()
+    }
+    
+    
+    // Called when server responds
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        print("Server responding")
+        receivedData = Data() // reset for new response
+        completionHandler(.allow) // proceed with receiving data
+    }
+    
+    // Called each time new chunk of data arrives
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        //        print("*******************************")
+        //        print("data:\(data)")
+        //        print("*******************************")
+        //        print("device recieve data")
+        receivedData.append(data)
+    }
+    
+    // Called when the task finishes
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("Error:", error)
+            return
+        }
+        
+        // Convert received data to UIImage
+        if let image = UIImage(data: receivedData) {
+            print("all data received successfully")
+            DispatchQueue.main.async {
+                self.setImage(image)
+            }
+        }
+    }
+    
+    func setImage(_ image: UIImage) {
+        imageView.image = image
+        
+        //Remove old aspect ratio constraint if any
+        if let oldConstraint = aspectRatioConstraint {
+            imageView.removeConstraint(oldConstraint)
+        }
+        
+        let aspectRatio = image.size.height / image.size.width
+        aspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: aspectRatio)
+        //aspectRatioConstraint?.priority = .defaultHigh
+        aspectRatioConstraint?.isActive = true
+    }
+    
+}
+import UIKit
+
+class ViewController: UIViewController {
+    
+    //outlets of text field
+    @IBOutlet weak var emailTextField: UITextField!
+    @IBOutlet weak var passwordTextField: UITextField!
+    
+    // Labels to show email/password validation messages
+    @IBOutlet weak var emailValidationLabel: UILabel!
+    @IBOutlet weak var passwordValidationLabel: UILabel!
+    
+    // Login button
+    @IBOutlet weak var loginButton: UIButton!
+    
+    // other sign-in buttons
+    
+    @IBOutlet weak var appleButton: UIButton!
+    @IBOutlet weak var googleButton: UIButton!
+    @IBOutlet weak var facebookButton: UIButton!
+    
+    // Go to signup page
+    @IBAction func signupBtn(_ sender: Any) {
+        print("Create an account as a new user")
+    }
+    
+    // Forgot password flow
+    @IBAction func forgotBtn(_ sender: Any) {
+        print("Forgot password")
+    }
+    
+    // database of users login
+    let emailDatabase: [String: String] = [
+        "john@gmail.com": "John@123",
+        "alice@example.com": "Alice@123",
+        "priya@gmail.com": "Priya@123",
+        "viji@gmail.com": "v@123"
+    ]
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Clear validation labels initially
+        emailValidationLabel.text = ""
+        passwordValidationLabel.text = ""
+        
+        // Add clear button inside email field
+        emailTextField.clearButtonMode = .whileEditing
+        
+        // Monitor text changes for enabling login button dynamically
+        passwordTextField.addTarget(self, action: #selector(textFieldsChanged), for: .editingChanged)
+        emailTextField.addTarget(self, action: #selector(textFieldsChanged), for: .editingChanged)
+        
+        // Add password eye toggle icon
+        setupPasswordToggle()
+        
+        // Style login button
+        loginButton.layer.cornerRadius = 10
+        
+        // Add shadow effect for other login buttons
+        setupShadow(for: appleButton)
+        setupShadow(for: googleButton)
+        setupShadow(for: facebookButton)
+    }
+    
+    //check fields to enable login button
+    @objc func textFieldsChanged() {
+        let isEmailEmpty = emailTextField.text?.isEmpty ?? true
+        let isPasswordEmpty = passwordTextField.text?.isEmpty ?? true
+        
+        // Enable login button only if both fields are non-empty
+        if !isEmailEmpty && !isPasswordEmpty {
+            loginButton.isEnabled = true
+            loginButton.backgroundColor = .systemBlue
+            loginButton.setTitleColor(.white, for: .normal)
+        }
+    }
+    
+    // email validation fuuction
+    func isValidEmail(_ email: String) -> Bool {
+        let pattern = "^[^0-9.][A-Za-z0-9._%+-]{0,49}@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: email)
+    }
+    
+    // Add eye icon for toggle password visibility
+    func setupPasswordToggle() {
+        let toggleButton = UIButton(type: .custom)
+        toggleButton.setImage(UIImage(systemName: "eye.slash"), for: .normal)
+        toggleButton.tintColor = .gray
+        toggleButton.addTarget(self, action: #selector(togglePasswordVisibility(_:)), for: .touchUpInside)
+        
+        passwordTextField.rightView = toggleButton
+        passwordTextField.rightViewMode = .always
+        passwordTextField.isSecureTextEntry = true
+    }
+    
+    // Toggle between secure text entry and plain text
+    @objc func togglePasswordVisibility(_ sender: UIButton) {
+        passwordTextField.isSecureTextEntry.toggle()
+        let iconName = passwordTextField.isSecureTextEntry ? "eye.slash" : "eye"
+        sender.setImage(UIImage(systemName: iconName), for: .normal)
+    }
+    
+    //add shadows to button
+    func setupShadow(for button: UIButton) {
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.2
+        button.layer.shadowOffset = CGSize(width: 0, height: 0)
+        button.layer.shadowRadius = 5
+        button.translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    //login button logic
+    @IBAction func loginBtnPressed(_ sender: UIButton) {
+        guard let email = emailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let password = passwordTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+
+        if !isValidEmail(email) {
+            emailValidationLabel.text = "Invalid Email"
+            emailValidationLabel.textColor = .systemRed
+            return
+        }
+
+        if let savedPassword = emailDatabase[email] {
+            if savedPassword == password {
+                // Save email in Keychain
+                let shared = KeychainManager()
+                let save_mail = shared.saveCredentials(email: email, password: password, place: nil)
+                print(save_mail)
+                
+                let pass = shared.getCredentials()
+                                
+//                let save_mail = KeychainManager.shared.saveCredentials(email: email, password: password, place: nil)
+//                print(save_mail)
+//             
+//                let pass = KeychainManager.shared.getCredentials()
+                print("login check ",pass)
+                // Save login state
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                
+                // Navigate to Home
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                let homeVC = storyboard.instantiateViewController(withIdentifier: "homeVC") as! HomeViewController
+                homeVC.email = email
+                navigationController?.setViewControllers([homeVC], animated: true)
+            } else {
+                passwordValidationLabel.text = "Incorrect password"
+                passwordValidationLabel.textColor = .systemRed
+            }
+        } else {
+            passwordValidationLabel.text = "Email not found"
+            passwordValidationLabel.textColor = .systemRed
+        }
+    }
+
+   
+    
+}
+
+import Foundation
+import Security
+
+class KeychainManager {
+    //static let shared = KeychainManager()
+    //private init() {}
+
+    private let service = "com.priyanka.task-1-1-keychain"
+    private let account = "userCredentials"
+
+    func saveCredentials(email: String, password: String, place:String?) -> Bool {
+        let credentials: [String: String]
+        if let places = place {
+            credentials = [
+                "email": email,
+                "password": password,
+                "place":places
+            ]
+        }
+        else{
+            credentials = [
+                "email": email,
+                "password": password,
+                "place":""
+            ]
+        }
+
+        guard let data = try? JSONSerialization.data(withJSONObject: credentials, options: []) else {
+            return false
+        }
+
+        // Delete old credentials if exist
+        deleteCredentials()
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String: data
+        ]
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
+    }
+
+    func getCredentials() -> (email: String?, password: String?, place:String?) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var item: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String]
+        else {
+            return (nil, nil,nil)
+        }
+        return (dict["email"], dict["password"], dict["place"])
+    }
+
+    // Delete stored credentials
+    func deleteCredentials() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
+    
+    func updateCredentials(newPlace:String)->Bool{
+        
+        let query:[String:Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        
+       let creds = getCredentials()
+        let updatedCreds: [String:String] = [
+            "email": creds.email ?? "",
+            "password": creds.password ?? "",
+            "place": newPlace
+        ]
+        
+        guard let data = try? JSONSerialization.data(withJSONObject: updatedCreds, options: []) else {
+            return false 
+        }
+        
+        let attributesToUpdate: [String: Any] = [
+            kSecValueData as String: data
+        ]
+        
+        let status = SecItemUpdate(query as CFDictionary,attributesToUpdate as CFDictionary)
+        if status == errSecSuccess {
+            return true
+        } else {
+            return false
+        }
+        
+    }
+    
+    
+}
+//
+//  SceneDelegate.swift
+//  task_1_1_keychain
+//
+//  Created by Priyanka on 12/09/25.
+//
+
+import UIKit
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    var window: UIWindow?
+
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        //        guard let _ = (scene as? UIWindowScene) else { return }
+        
+            guard let windowScene = (scene as? UIWindowScene) else { return }
+            
+            window = UIWindow(windowScene: windowScene)
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            
+            let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+            var rootVC: UIViewController
+        let shared = KeychainManager()
+        let pass = shared.getCredentials()
+
+//        let pass = KeychainManager.shared.getCredentials()
+        print(pass)
+        if isLoggedIn, let email = pass.email{
+                let homeVC = storyboard.instantiateViewController(withIdentifier: "homeVC") as! HomeViewController
+                homeVC.email = email
+                rootVC = UINavigationController(rootViewController: homeVC)
+            } else {
+                let loginVC = storyboard.instantiateViewController(withIdentifier: "loginVC") as! ViewController
+                rootVC = UINavigationController(rootViewController: loginVC)
+            }
+            
+            window?.rootViewController = rootVC
+            window?.makeKeyAndVisible()
+        }
+
+    
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+        // Called as the scene is being released by the system.
+        // This occurs shortly after the scene enters the background, or when its session is discarded.
+        // Release any resources associated with this scene that can be re-created the next time the scene connects.
+        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        // Called when the scene has moved from an inactive state to an active state.
+        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        // Called when the scene will move from an active state to an inactive state.
+        // This may occur due to temporary interruptions (ex. an incoming phone call).
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        // Called as the scene transitions from the background to the foreground.
+        // Use this method to undo the changes made on entering the background.
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        // Called as the scene transitions from the foreground to the background.
+        // Use this method to save data, release shared resources, and store enough scene-specific state information
+        // to restore the scene back to its current state.
+    }
+
+
+}
+
