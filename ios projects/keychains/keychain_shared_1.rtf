@@ -1,1037 +1,488 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2821
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Bold;\f1\fnil\fcharset0 Menlo-Regular;}
-{\colortbl;\red255\green255\blue255;\red155\green35\blue147;\red255\green255\blue255;\red0\green0\blue0;
-\red11\green79\blue121;\red15\green104\blue160;\red28\green70\blue74;\red196\green26\blue22;\red57\green0\blue160;
-\red108\green54\blue169;\red93\green108\blue121;\red50\green109\blue116;\red28\green0\blue207;}
-{\*\expandedcolortbl;;\csgenericrgb\c60759\c13753\c57628;\csgenericrgb\c100000\c100000\c100000;\csgenericrgb\c0\c0\c0\c85000;
-\csgenericrgb\c4314\c30980\c47451;\csgenericrgb\c5882\c40784\c62745;\csgenericrgb\c10981\c27276\c28869;\csgenericrgb\c77000\c10200\c8600;\csgenericrgb\c22454\c0\c62803;
-\csgenericrgb\c42190\c21278\c66379;\csgenericrgb\c36526\c42188\c47515;\csgenericrgb\c19418\c42935\c45455;\csgenericrgb\c11000\c0\c81000;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\deftab593
-\pard\tx593\pardeftab593\partightenfactor0
+import Foundation
+import Security
 
-\f0\b\fs24 \cf2 \cb3 import
-\f1\b0 \cf4  Foundation\
+class KeychainManager {
+    static let shared = KeychainManager()
+    private init() {}
 
-\f0\b \cf2 import
-\f1\b0 \cf4  Security\
-\
+    private let service = "com.priyanka.task-1-1-keychain"
+    private let account = "userCredentials"
 
-\f0\b \cf2 class
-\f1\b0 \cf4  \cf5 KeychainManager\cf4  \{\
-    
-\f0\b \cf2 static
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  \cf6 shared\cf4  = \cf7 KeychainManager\cf4 ()\
-    
-\f0\b \cf2 private
-\f1\b0 \cf4  
-\f0\b \cf2 init
-\f1\b0 \cf4 () \{\}\
-\
-    
-\f0\b \cf2 private
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  \cf6 service\cf4  = \cf8 "com.priyanka.task-1-1-keychain"\cf4 \
-    
-\f0\b \cf2 private
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  \cf6 account\cf4  = \cf8 "userCredentials"\cf4 \
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 saveCredentials\cf4 (\cf6 email\cf4 : \cf9 String\cf4 , \cf6 password\cf4 : \cf9 String\cf4 , \cf6 place\cf4 :\cf9 String\cf4 ?) -> \cf9 Bool\cf4  \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  credentials: [\cf9 String\cf4 : \cf9 String\cf4 ]\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  places = place \{\
-            credentials = [\
-                \cf8 "email"\cf4 : email,\
-                \cf8 "password"\cf4 : password,\
-                \cf8 "place"\cf4 :places\
-            ]\
-        \}\
-        
-\f0\b \cf2 else
-\f1\b0 \cf4 \{\
-            credentials = [\
-                \cf8 "email"\cf4 : email,\
-                \cf8 "password"\cf4 : password,\
-                \cf8 "place"\cf4 :\cf8 ""\cf4 \
-            ]\
-        \}\
-\
-        
-\f0\b \cf2 guard
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  data = 
-\f0\b \cf2 try
-\f1\b0 \cf4 ? \cf9 JSONSerialization\cf4 .\cf10 data\cf4 (\cf10 withJSONObject\cf4 : credentials, \cf10 options\cf4 : []) 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4  
-\f0\b \cf2 false
-\f1\b0 \cf4 \
-        \}\
-\
-        \cf11 // Delete old credentials if exist\cf4 \
-        \cf12 deleteCredentials\cf4 ()\
-\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  query: [\cf9 String\cf4 : 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ] = [\
-            \cf10 kSecClass\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf10 kSecClassGenericPassword\cf4 ,\
-            \cf10 kSecAttrService\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 service\cf4 ,\
-            \cf10 kSecAttrAccount\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 account\cf4 ,\
-            \cf10 kSecValueData\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : data\
-        ]\
-\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  status = \cf10 SecItemAdd\cf4 (query 
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 CFDictionary\cf4 , 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-        
-\f0\b \cf2 return
-\f1\b0 \cf4  status == \cf10 errSecSuccess\cf4 \
-    \}\
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 getCredentials\cf4 () -> (email: \cf9 String\cf4 ?, password: \cf9 String\cf4 ?, place:\cf9 String\cf4 ?) \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  query: [\cf9 String\cf4 : 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ] = [\
-            \cf10 kSecClass\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf10 kSecClassGenericPassword\cf4 ,\
-            \cf10 kSecAttrService\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 service\cf4 ,\
-            \cf10 kSecAttrAccount\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 account\cf4 ,\
-            \cf10 kSecReturnData\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : 
-\f0\b \cf2 true
-\f1\b0 \cf4 ,\
-            \cf10 kSecMatchLimit\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf10 kSecMatchLimitOne\cf4 \
-        ]\
-\
-        
-\f0\b \cf2 var
-\f1\b0 \cf4  item: \cf9 AnyObject\cf4 ?\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  status = \cf10 SecItemCopyMatching\cf4 (query 
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 CFDictionary\cf4 , &item)\
-\
-        
-\f0\b \cf2 guard
-\f1\b0 \cf4  status == \cf10 errSecSuccess\cf4 ,\
-              
-\f0\b \cf2 let
-\f1\b0 \cf4  data = item 
-\f0\b \cf2 as
-\f1\b0 \cf4 ? \cf9 Data\cf4 ,\
-              
-\f0\b \cf2 let
-\f1\b0 \cf4  dict = 
-\f0\b \cf2 try
-\f1\b0 \cf4 ? \cf9 JSONSerialization\cf4 .\cf10 jsonObject\cf4 (\cf10 with\cf4 : data, \cf10 options\cf4 : []) 
-\f0\b \cf2 as
-\f1\b0 \cf4 ? [\cf9 String\cf4 : \cf9 String\cf4 ]\
-        
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4  (
-\f0\b \cf2 nil
-\f1\b0 \cf4 , 
-\f0\b \cf2 nil
-\f1\b0 \cf4 ,
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-        \}\
-        
-\f0\b \cf2 return
-\f1\b0 \cf4  (dict[\cf8 "email"\cf4 ], dict[\cf8 "password"\cf4 ], dict[\cf8 "place"\cf4 ])\
-    \}\
-\
-    \cf11 // Delete stored credentials\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 deleteCredentials\cf4 () \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  query: [\cf9 String\cf4 : 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ] = [\
-            \cf10 kSecClass\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf10 kSecClassGenericPassword\cf4 ,\
-            \cf10 kSecAttrService\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 service\cf4 ,\
-            \cf10 kSecAttrAccount\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 account\cf4 \
-        ]\
-        \cf10 SecItemDelete\cf4 (query 
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 CFDictionary\cf4 )\
-    \}\
-    \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 updateCredentials\cf4 (\cf6 newPlace\cf4 :\cf9 String\cf4 )->\cf9 Bool\cf4 \{\
-        \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  query:[\cf9 String\cf4 :
-\f0\b \cf2 Any
-\f1\b0 \cf4 ] = [\
-            \cf10 kSecClass\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf10 kSecClassGenericPassword\cf4 ,\
-            \cf10 kSecAttrService\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 service\cf4 ,\
-            \cf10 kSecAttrAccount\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : \cf12 account\cf4 \
-        ]\
-        \
-       
-\f0\b \cf2 let
-\f1\b0 \cf4  creds = \cf12 getCredentials\cf4 ()\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  updatedCreds: [\cf9 String\cf4 :\cf9 String\cf4 ] = [\
-            \cf8 "email"\cf4 : creds.\cf12 email\cf4  ?? \cf8 ""\cf4 ,\
-            \cf8 "password"\cf4 : creds.\cf10 password\cf4  ?? \cf8 ""\cf4 ,\
-            \cf8 "place"\cf4 : newPlace\
-        ]\
-        \
-        
-\f0\b \cf2 guard
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  data = 
-\f0\b \cf2 try
-\f1\b0 \cf4 ? \cf9 JSONSerialization\cf4 .\cf10 data\cf4 (\cf10 withJSONObject\cf4 : updatedCreds, \cf10 options\cf4 : []) 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4  
-\f0\b \cf2 false
-\f1\b0 \cf4  \
-        \}\
-        \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  attributesToUpdate: [\cf9 String\cf4 : 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ] = [\
-            \cf10 kSecValueData\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 String\cf4 : data\
-        ]\
-        \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  status = \cf10 SecItemUpdate\cf4 (query 
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 CFDictionary\cf4 ,attributesToUpdate 
-\f0\b \cf2 as
-\f1\b0 \cf4  \cf9 CFDictionary\cf4 )\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  status == \cf10 errSecSuccess\cf4  \{\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4  
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-        \} 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4  
-\f0\b \cf2 false
-\f1\b0 \cf4 \
-        \}\
-        \
-    \}\
-    \
-    \
-\}\
-\
-\
-\
+    func saveCredentials(email: String, password: String, place:String?) -> Bool {
+        let credentials: [String: String]
+        if let places = place {
+            credentials = [
+                "email": email,
+                "password": password,
+                "place":places
+            ]
+        }
+        else{
+            credentials = [
+                "email": email,
+                "password": password,
+                "place":""
+            ]
+        }
 
-\f0\b \cf2 import
-\f1\b0 \cf4  UIKit\
-\
+        guard let data = try? JSONSerialization.data(withJSONObject: credentials, options: []) else {
+            return false
+        }
 
-\f0\b \cf2 class
-\f1\b0 \cf4  \cf5 ViewController\cf4 : \cf9 UIViewController\cf4  \{\
-    \
-    \cf11 //outlets of text field\cf4 \
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 emailTextField\cf4 : \cf9 UITextField\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 passwordTextField\cf4 : \cf9 UITextField\cf4 !\
-    \
-    \cf11 // Labels to show email/password validation messages\cf4 \
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 emailValidationLabel\cf4 : \cf9 UILabel\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 passwordValidationLabel\cf4 : \cf9 UILabel\cf4 !\
-    \
-    \cf11 // Login button\cf4 \
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 loginButton\cf4 : \cf9 UIButton\cf4 !\
-    \
-    \cf11 // other sign-in buttons\cf4 \
-    \
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 appleButton\cf4 : \cf9 UIButton\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 googleButton\cf4 : \cf9 UIButton\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 facebookButton\cf4 : \cf9 UIButton\cf4 !\
-    \
-    \cf11 // Go to signup page\cf4 \
-    
-\f0\b \cf2 @IBAction
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 signupBtn\cf4 (\cf6 _\cf4  sender: 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ) \{\
-        \cf10 print\cf4 (\cf8 "Create an account as a new user"\cf4 )\
-    \}\
-    \
-    \cf11 // Forgot password flow\cf4 \
-    
-\f0\b \cf2 @IBAction
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 forgotBtn\cf4 (\cf6 _\cf4  sender: 
-\f0\b \cf2 Any
-\f1\b0 \cf4 ) \{\
-        \cf10 print\cf4 (\cf8 "Forgot password"\cf4 )\
-    \}\
-    \
-    \cf11 // database of users login\cf4 \
-    
-\f0\b \cf2 let
-\f1\b0 \cf4  \cf6 emailDatabase\cf4 : [\cf9 String\cf4 : \cf9 String\cf4 ] = [\
-        \cf8 "john@gmail.com"\cf4 : \cf8 "John@123"\cf4 ,\
-        \cf8 "alice@example.com"\cf4 : \cf8 "Alice@123"\cf4 ,\
-        \cf8 "priya@gmail.com"\cf4 : \cf8 "Priya@123"\cf4 ,\
-        \cf8 "viji@gmail.com"\cf4 : \cf8 "v@123"\cf4 \
-    ]\
-    \
-    
-\f0\b \cf2 override
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 viewDidLoad\cf4 () \{\
-        
-\f0\b \cf2 super
-\f1\b0 \cf4 .\cf10 viewDidLoad\cf4 ()\
-        \
-        \cf11 // Clear validation labels initially\cf4 \
-        \cf12 emailValidationLabel\cf4 .\cf10 text\cf4  = \cf8 ""\cf4 \
-        \cf12 passwordValidationLabel\cf4 .\cf10 text\cf4  = \cf8 ""\cf4 \
-        \
-        \cf11 // Add clear button inside email field\cf4 \
-        \cf12 emailTextField\cf4 .\cf10 clearButtonMode\cf4  = .\cf10 whileEditing\cf4 \
-        \
-        \cf11 // Monitor text changes for enabling login button dynamically\cf4 \
-        \cf12 passwordTextField\cf4 .\cf10 addTarget\cf4 (
-\f0\b \cf2 self
-\f1\b0 \cf4 , \cf10 action\cf4 : 
-\f0\b \cf2 #selector
-\f1\b0 \cf4 (\cf12 textFieldsChanged\cf4 ), \cf10 for\cf4 : .\cf10 editingChanged\cf4 )\
-        \cf12 emailTextField\cf4 .\cf10 addTarget\cf4 (
-\f0\b \cf2 self
-\f1\b0 \cf4 , \cf10 action\cf4 : 
-\f0\b \cf2 #selector
-\f1\b0 \cf4 (\cf12 textFieldsChanged\cf4 ), \cf10 for\cf4 : .\cf10 editingChanged\cf4 )\
-        \
-        \cf11 // Add password eye toggle icon\cf4 \
-        \cf12 setupPasswordToggle\cf4 ()\
-        \
-        \cf11 // Style login button\cf4 \
-        \cf12 loginButton\cf4 .\cf10 layer\cf4 .\cf10 cornerRadius\cf4  = \cf13 10\cf4 \
-        \
-        \cf11 // Add shadow effect for other login buttons\cf4 \
-        \cf12 setupShadow\cf4 (\cf12 for\cf4 : \cf12 appleButton\cf4 )\
-        \cf12 setupShadow\cf4 (\cf12 for\cf4 : \cf12 googleButton\cf4 )\
-        \cf12 setupShadow\cf4 (\cf12 for\cf4 : \cf12 facebookButton\cf4 )\
-    \}\
-    \
-    \cf11 //check fields to enable login button\cf4 \
-    
-\f0\b \cf2 @objc
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 textFieldsChanged\cf4 () \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  isEmailEmpty = \cf12 emailTextField\cf4 .\cf10 text\cf4 ?.\cf10 isEmpty\cf4  ?? 
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  isPasswordEmpty = \cf12 passwordTextField\cf4 .\cf10 text\cf4 ?.\cf10 isEmpty\cf4  ?? 
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-        \
-        \cf11 // Enable login button only if both fields are non-empty\cf4 \
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  !isEmailEmpty && !isPasswordEmpty \{\
-            \cf12 loginButton\cf4 .\cf10 isEnabled\cf4  = 
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-            \cf12 loginButton\cf4 .\cf10 backgroundColor\cf4  = .\cf10 systemBlue\cf4 \
-            \cf12 loginButton\cf4 .\cf10 setTitleColor\cf4 (.\cf10 white\cf4 , \cf10 for\cf4 : .\cf10 normal\cf4 )\
-        \}\
-    \}\
-    \
-    \cf11 // email validation fuuction\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 isValidEmail\cf4 (\cf6 _\cf4  email: \cf9 String\cf4 ) -> \cf9 Bool\cf4  \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  pattern = \cf8 "^[^0-9.][A-Za-z0-9._%+-]\{0,49\}@[A-Za-z0-9.-]+\\\\.[A-Za-z]\{2,\}$"\cf4 \
-        
-\f0\b \cf2 return
-\f1\b0 \cf4  \cf9 NSPredicate\cf4 (\cf10 format\cf4 : \cf8 "SELF MATCHES %@"\cf4 , pattern).evaluate(with: email)\
-    \}\
-    \
-    \cf11 // Add eye icon for toggle password visibility\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 setupPasswordToggle\cf4 () \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  toggleButton = \cf9 UIButton\cf4 (\cf10 type\cf4 : .\cf10 custom\cf4 )\
-        toggleButton.\cf10 setImage\cf4 (\cf9 UIImage\cf4 (\cf10 systemName\cf4 : \cf8 "eye.slash"\cf4 ), \cf10 for\cf4 : .\cf10 normal\cf4 )\
-        toggleButton.\cf10 tintColor\cf4  = .\cf10 gray\cf4 \
-        toggleButton.\cf10 addTarget\cf4 (
-\f0\b \cf2 self
-\f1\b0 \cf4 , \cf10 action\cf4 : 
-\f0\b \cf2 #selector
-\f1\b0 \cf4 (\cf12 togglePasswordVisibility\cf4 (\cf12 _\cf4 :)), \cf10 for\cf4 : .\cf10 touchUpInside\cf4 )\
-        \
-        \cf12 passwordTextField\cf4 .\cf10 rightView\cf4  = toggleButton\
-        \cf12 passwordTextField\cf4 .\cf10 rightViewMode\cf4  = .\cf10 always\cf4 \
-        \cf12 passwordTextField\cf4 .\cf10 isSecureTextEntry\cf4  = 
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-    \}\
-    \
-    \cf11 // Toggle between secure text entry and plain text\cf4 \
-    
-\f0\b \cf2 @objc
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 togglePasswordVisibility\cf4 (\cf6 _\cf4  sender: \cf9 UIButton\cf4 ) \{\
-        \cf12 passwordTextField\cf4 .\cf10 isSecureTextEntry\cf4 .\cf10 toggle\cf4 ()\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  iconName = \cf12 passwordTextField\cf4 .\cf10 isSecureTextEntry\cf4  ? \cf8 "eye.slash"\cf4  : \cf8 "eye"\cf4 \
-        sender.\cf10 setImage\cf4 (\cf9 UIImage\cf4 (\cf10 systemName\cf4 : iconName), \cf10 for\cf4 : .\cf10 normal\cf4 )\
-    \}\
-    \
-    \cf11 //add shadows to button\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 setupShadow\cf4 (\cf6 for\cf4  button: \cf9 UIButton\cf4 ) \{\
-        button.\cf10 layer\cf4 .\cf10 shadowColor\cf4  = \cf9 UIColor\cf4 .\cf10 black\cf4 .\cf10 cgColor\cf4 \
-        button.\cf10 layer\cf4 .\cf10 shadowOpacity\cf4  = \cf13 0.2\cf4 \
-        button.\cf10 layer\cf4 .\cf10 shadowOffset\cf4  = \cf9 CGSize\cf4 (\cf10 width\cf4 : \cf13 0\cf4 , \cf10 height\cf4 : \cf13 0\cf4 )\
-        button.\cf10 layer\cf4 .\cf10 shadowRadius\cf4  = \cf13 5\cf4 \
-        button.\cf10 translatesAutoresizingMaskIntoConstraints\cf4  = 
-\f0\b \cf2 false
-\f1\b0 \cf4 \
-    \}\
-    \
-    \cf11 //login button logic\cf4 \
-    
-\f0\b \cf2 @IBAction
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 loginBtnPressed\cf4 (\cf6 _\cf4  sender: \cf9 UIButton\cf4 ) \{\
-        
-\f0\b \cf2 guard
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  email = \cf12 emailTextField\cf4 .\cf10 text\cf4 ?.\cf10 trimmingCharacters\cf4 (\cf10 in\cf4 : .\cf10 whitespacesAndNewlines\cf4 ),\
-              
-\f0\b \cf2 let
-\f1\b0 \cf4  password = \cf12 passwordTextField\cf4 .\cf10 text\cf4 ?.\cf10 trimmingCharacters\cf4 (\cf10 in\cf4 : .\cf10 whitespacesAndNewlines\cf4 ) 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{ 
-\f0\b \cf2 return
-\f1\b0 \cf4  \}\
-\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  !\cf12 isValidEmail\cf4 (email) \{\
-            \cf12 emailValidationLabel\cf4 .\cf10 text\cf4  = \cf8 "Invalid Email"\cf4 \
-            \cf12 emailValidationLabel\cf4 .\cf10 textColor\cf4  = .\cf10 systemRed\cf4 \
-            
-\f0\b \cf2 return
-\f1\b0 \cf4 \
-        \}\
-\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  savedPassword = \cf12 emailDatabase\cf4 [email] \{\
-            
-\f0\b \cf2 if
-\f1\b0 \cf4  savedPassword == password \{\
-                \cf11 // Save email in Keychain\cf4 \
-                \
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  save_mail = \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 saveCredentials\cf4 (\cf12 email\cf4 : email, \cf12 password\cf4 : password, \cf12 place\cf4 : 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-                \cf10 print\cf4 (save_mail)\
-             \
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  pass = \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 getCredentials\cf4 ()\
-                \cf10 print\cf4 (\cf8 "login check "\cf4 ,pass)\
-                \cf11 // Save login state\cf4 \
-                \cf9 UserDefaults\cf4 .\cf10 standard\cf4 .\cf10 set\cf4 (
-\f0\b \cf2 true
-\f1\b0 \cf4 , \cf10 forKey\cf4 : \cf8 "isLoggedIn"\cf4 )\
-                \
-                \cf11 // Navigate to Home\cf4 \
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  storyboard = \cf9 UIStoryboard\cf4 (\cf10 name\cf4 : \cf8 "Main"\cf4 , \cf10 bundle\cf4 : 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  homeVC = storyboard.\cf10 instantiateViewController\cf4 (\cf10 withIdentifier\cf4 : \cf8 "homeVC"\cf4 ) 
-\f0\b \cf2 as
-\f1\b0 \cf4 ! \cf7 HomeViewController\cf4 \
-                homeVC.\cf12 email\cf4  = email\
-                \cf10 navigationController\cf4 ?.\cf10 setViewControllers\cf4 ([homeVC], \cf10 animated\cf4 : 
-\f0\b \cf2 true
-\f1\b0 \cf4 )\
-            \} 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-                \cf12 passwordValidationLabel\cf4 .\cf10 text\cf4  = \cf8 "Incorrect password"\cf4 \
-                \cf12 passwordValidationLabel\cf4 .\cf10 textColor\cf4  = .\cf10 systemRed\cf4 \
-            \}\
-        \} 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            \cf12 passwordValidationLabel\cf4 .\cf10 text\cf4  = \cf8 "Email not found"\cf4 \
-            \cf12 passwordValidationLabel\cf4 .\cf10 textColor\cf4  = .\cf10 systemRed\cf4 \
-        \}\
-    \}\
-\
-   \
-    \
-\}\
-\
-\
-\
-\
-\
+        // Delete old credentials if exist
+        deleteCredentials()
 
-\f0\b \cf2 import
-\f1\b0 \cf4  UIKit\
-\
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecValueData as String: data
+        ]
 
-\f0\b \cf2 class
-\f1\b0 \cf4  \cf5 HomeViewController\cf4 : \cf9 UIViewController\cf4 , \cf9 URLSessionDataDelegate\cf4  \{\
-    \
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 emailLabel\cf4 : \cf9 UILabel\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 contentView\cf4 : \cf9 UIView\cf4 !\
-    
-\f0\b \cf2 @IBOutlet
-\f1\b0 \cf4  
-\f0\b \cf2 weak
-\f1\b0 \cf4  
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 place\cf4 : \cf9 UITextField\cf4 !\
-    \
-    
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 email\cf4 : \cf9 String\cf4 ?\
-    
-\f0\b \cf2 let
-\f1\b0 \cf4  \cf6 imageView\cf4  = \cf9 UIImageView\cf4 ()\
-    
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 aspectRatioConstraint\cf4 : \cf9 NSLayoutConstraint\cf4 ?\
-    \
-    \cf11 // This will store the downloaded data\cf4 \
-    
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 receivedData\cf4  = \cf9 Data\cf4 ()\
-    \
-    
-\f0\b \cf2 override
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 viewDidLoad\cf4 () \{\
-        
-\f0\b \cf2 super
-\f1\b0 \cf4 .\cf10 viewDidLoad\cf4 ()\
-        \
-        \cf12 emailLabel\cf4 .\cf10 text\cf4  = \cf12 email\cf4 \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  credentials = \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 getCredentials\cf4 ()\
-        \cf12 place\cf4 .\cf10 text\cf4  = credentials.\cf12 place\cf4 \
-        \
-        \cf11 // Setup UIImageView\cf4 \
-        \cf12 imageView\cf4 .\cf10 contentMode\cf4  = .\cf10 scaleAspectFit\cf4 \
-        \cf12 imageView\cf4 .\cf10 backgroundColor\cf4  = .\cf10 yellow\cf4 \
-        \cf12 imageView\cf4 .\cf10 translatesAutoresizingMaskIntoConstraints\cf4  = 
-\f0\b \cf2 false
-\f1\b0 \cf4 \
-        \
-        \cf11 // Add imageView inside the scroll view\'92s contentView\cf4 \
-        \cf12 contentView\cf4 .\cf10 addSubview\cf4 (\cf12 imageView\cf4 )\
-        \
-        \cf11 // Auto Layout constraints\cf4 \
-        \cf9 NSLayoutConstraint\cf4 .\cf10 activate\cf4 ([\
-            \cf12 imageView\cf4 .\cf10 topAnchor\cf4 .\cf10 constraint\cf4 (\cf10 equalTo\cf4 : \cf12 place\cf4 .\cf10 bottomAnchor\cf4 , \cf10 constant\cf4 : \cf13 20\cf4 ),\
-            \cf12 imageView\cf4 .\cf10 leadingAnchor\cf4 .\cf10 constraint\cf4 (\cf10 equalTo\cf4 : \cf12 contentView\cf4 .\cf10 leadingAnchor\cf4 , \cf10 constant\cf4 : \cf13 10\cf4 ),\
-            \cf12 imageView\cf4 .\cf10 trailingAnchor\cf4 .\cf10 constraint\cf4 (\cf10 equalTo\cf4 : \cf12 contentView\cf4 .\cf10 trailingAnchor\cf4 , \cf10 constant\cf4 : -\cf13 10\cf4 ),\
-            \cf11 //imageView.heightAnchor.constraint(equalToConstant: 200)\cf4 \
-        ])\
-        \
-        \cf11 // Add Logout button on right\cf4 \
-        \cf10 navigationItem\cf4 .\cf10 rightBarButtonItem\cf4  = \cf9 UIBarButtonItem\cf4 (\
-            \cf10 title\cf4 : \cf8 "Logout"\cf4 ,\
-            \cf10 style\cf4 : .\cf10 plain\cf4 ,\
-            \cf10 target\cf4 : 
-\f0\b \cf2 self
-\f1\b0 \cf4 ,\
-            \cf10 action\cf4 : 
-\f0\b \cf2 #selector
-\f1\b0 \cf4 (\cf12 logoutTapped\cf4 )\
-        )\
-        \cf10 navigationItem\cf4 .\cf10 leftBarButtonItem\cf4  = \cf9 UIBarButtonItem\cf4 (\
-            \cf10 title\cf4 : \cf8 "Update place"\cf4 ,\
-            \cf10 style\cf4 : .\cf10 plain\cf4 ,\
-            \cf10 target\cf4 : 
-\f0\b \cf2 self
-\f1\b0 \cf4 ,\
-            \cf10 action\cf4 : 
-\f0\b \cf2 #selector
-\f1\b0 \cf4 (\cf12 updatePassword\cf4 )\
-        )\
-        \cf12 fetchImage\cf4 ()\
-    \}\
-    
-\f0\b \cf2 @objc
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 updatePassword\cf4 ()\{\
-        
-\f0\b \cf2 guard
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  newPlace = \cf12 place\cf4 .\cf10 text\cf4 , !newPlace.\cf10 isEmpty\cf4   
-\f0\b \cf2 else
-\f1\b0 \cf4  \{ \cf10 print\cf4 (\cf8 "enter some place"\cf4 ); 
-\f0\b \cf2 return
-\f1\b0 \cf4  \}\
-        \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  success = \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 updateCredentials\cf4 (\cf12 newPlace\cf4 : newPlace)\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  success \{\
-            \cf10 print\cf4 (\cf8 "Place updated successfully!"\cf4 )\
-        \} 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-            \cf10 print\cf4 (\cf8 "Failed to update place."\cf4 )\
-        \}\
-    \}\
-    
-\f0\b \cf2 @objc
-\f1\b0 \cf4  
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 logoutTapped\cf4 () \{\
-            \cf11 // Delete email from Keychain\cf4 \
-            \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 deleteCredentials\cf4 ()\
-            \
-            \cf11 // Update login state\cf4 \
-            \cf9 UserDefaults\cf4 .\cf10 standard\cf4 .\cf10 set\cf4 (
-\f0\b \cf2 false
-\f1\b0 \cf4 , \cf10 forKey\cf4 : \cf8 "isLoggedIn"\cf4 )\
-\
-            \cf11 // Go back to login screen\cf4 \
-            
-\f0\b \cf2 let
-\f1\b0 \cf4  storyboard = \cf9 UIStoryboard\cf4 (\cf10 name\cf4 : \cf8 "Main"\cf4 , \cf10 bundle\cf4 : 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-            
-\f0\b \cf2 let
-\f1\b0 \cf4  loginVC = storyboard.\cf10 instantiateViewController\cf4 (\cf10 withIdentifier\cf4 : \cf8 "loginVC"\cf4 ) 
-\f0\b \cf2 as
-\f1\b0 \cf4 ! \cf7 ViewController\cf4 \
-            
-\f0\b \cf2 let
-\f1\b0 \cf4  nav = \cf9 UINavigationController\cf4 (\cf10 rootViewController\cf4 : loginVC)\
-\
-            \cf11 // Use the active window scene\cf4 \
-            
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  windowScene = \cf9 UIApplication\cf4 .\cf10 shared\cf4 .\cf10 connectedScenes\cf4 .\cf10 first\cf4  
-\f0\b \cf2 as
-\f1\b0 \cf4 ? \cf9 UIWindowScene\cf4 ,\
-               
-\f0\b \cf2 let
-\f1\b0 \cf4  window = windowScene.\cf10 windows\cf4 .\cf10 first\cf4  \{\
-                window.\cf10 rootViewController\cf4  = nav\
-                window.\cf10 makeKeyAndVisible\cf4 ()\
-            \}\
-\
-        \}\
-\
-    \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 fetchImage\cf4 () \{\
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  url = \cf9 URL\cf4 (\cf10 string\cf4 : \cf8 "https://i.pinimg.com/originals/42/90/74/42907405f16ba768786a616095a8cfb2.jpg"\cf4 )!\
-        \
-        \cf11 // Create a URLSession with self as delegate\cf4 \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  sessionConfig = \cf9 URLSessionConfiguration\cf4 .\cf10 default\cf4 \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  session = \cf9 URLSession\cf4 (\cf10 configuration\cf4 : sessionConfig, \cf10 delegate\cf4 : 
-\f0\b \cf2 self
-\f1\b0 \cf4 , \cf10 delegateQueue\cf4 : 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-        \
-        \cf11 // Create a data task\cf4 \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  task = session.\cf10 dataTask\cf4 (\cf10 with\cf4 : url)\
-        task.\cf10 resume\cf4 ()\
-    \}\
-    \
-    \
-    \cf11 // Called when server responds\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 urlSession\cf4 (\cf6 _\cf4  session: \cf9 URLSession\cf4 , \cf6 dataTask\cf4 : \cf9 URLSessionDataTask\cf4 , \cf6 didReceive\cf4  response: \cf9 URLResponse\cf4 ,\
-                    \cf6 completionHandler\cf4 : 
-\f0\b \cf2 @escaping
-\f1\b0 \cf4  (\cf9 URLSession\cf4 .\cf9 ResponseDisposition\cf4 ) -> \cf9 Void\cf4 ) \{\
-        \cf10 print\cf4 (\cf8 "Server responding"\cf4 )\
-        \cf12 receivedData\cf4  = \cf9 Data\cf4 () \cf11 // reset for new response\cf4 \
-        completionHandler(.\cf10 allow\cf4 ) \cf11 // proceed with receiving data\cf4 \
-    \}\
-    \
-    \cf11 // Called each time new chunk of data arrives\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 urlSession\cf4 (\cf6 _\cf4  session: \cf9 URLSession\cf4 , \cf6 dataTask\cf4 : \cf9 URLSessionDataTask\cf4 , \cf6 didReceive\cf4  data: \cf9 Data\cf4 ) \{\
-        \cf11 //        print("*******************************")\cf4 \
-        \cf11 //        print("data:\\(data)")\cf4 \
-        \cf11 //        print("*******************************")\cf4 \
-        \cf11 //        print("device recieve data")\cf4 \
-        \cf12 receivedData\cf4 .\cf10 append\cf4 (data)\
-    \}\
-    \
-    \cf11 // Called when the task finishes\cf4 \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 urlSession\cf4 (\cf6 _\cf4  session: \cf9 URLSession\cf4 , \cf6 task\cf4 : \cf9 URLSessionTask\cf4 , \cf6 didCompleteWithError\cf4  error: \cf9 Error\cf4 ?) \{\
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  error = error \{\
-            \cf10 print\cf4 (\cf8 "Error:"\cf4 , error)\
-            
-\f0\b \cf2 return
-\f1\b0 \cf4 \
-        \}\
-        \
-        \cf11 // Convert received data to UIImage\cf4 \
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  image = \cf9 UIImage\cf4 (\cf10 data\cf4 : \cf12 receivedData\cf4 ) \{\
-            \cf10 print\cf4 (\cf8 "all data received successfully"\cf4 )\
-            DispatchQueue.\cf10 main\cf4 .\cf10 async\cf4  \{\
-                
-\f0\b \cf2 self
-\f1\b0 \cf4 .\cf12 setImage\cf4 (image)\
-            \}\
-        \}\
-    \}\
-    \
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 setImage\cf4 (\cf6 _\cf4  image: \cf9 UIImage\cf4 ) \{\
-        \cf12 imageView\cf4 .\cf10 image\cf4  = image\
-        \
-        \cf11 //Remove old aspect ratio constraint if any\cf4 \
-        
-\f0\b \cf2 if
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  oldConstraint = \cf12 aspectRatioConstraint\cf4  \{\
-            \cf12 imageView\cf4 .\cf10 removeConstraint\cf4 (oldConstraint)\
-        \}\
-        \
-        
-\f0\b \cf2 let
-\f1\b0 \cf4  aspectRatio = image.\cf10 size\cf4 .\cf10 height\cf4  / image.\cf10 size\cf4 .\cf10 width\cf4 \
-        \cf12 aspectRatioConstraint\cf4  = \cf12 imageView\cf4 .\cf10 heightAnchor\cf4 .\cf10 constraint\cf4 (\cf10 equalTo\cf4 : \cf12 imageView\cf4 .\cf10 widthAnchor\cf4 , \cf10 multiplier\cf4 : aspectRatio)\
-        \cf11 //aspectRatioConstraint?.priority = .defaultHigh\cf4 \
-        \cf12 aspectRatioConstraint\cf4 ?.\cf10 isActive\cf4  = 
-\f0\b \cf2 true
-\f1\b0 \cf4 \
-    \}\
-    \
-\}\
-\
-\
-\
-\cf11 //\cf4 \
-\cf11 //  SceneDelegate.swift\cf4 \
-\cf11 //  task_1_1_keychain\cf4 \
-\cf11 //\cf4 \
-\cf11 //  Created by Priyanka on 12/09/25.\cf4 \
-\cf11 //\cf4 \
-\
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
+    }
 
-\f0\b \cf2 import
-\f1\b0 \cf4  UIKit\
-\
+    func getCredentials() -> (email: String?, password: String?, place:String?) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
 
-\f0\b \cf2 class
-\f1\b0 \cf4  \cf5 SceneDelegate\cf4 : \cf9 UIResponder\cf4 , \cf9 UIWindowSceneDelegate\cf4  \{\
-\
+        var item: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String]
+        else {
+            return (nil, nil,nil)
+        }
+        return (dict["email"], dict["password"], dict["place"])
+    }
+
+    // Delete stored credentials
+    func deleteCredentials() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
+    }
     
-\f0\b \cf2 var
-\f1\b0 \cf4  \cf6 window\cf4 : \cf9 UIWindow\cf4 ?\
-\
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 scene\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 , \cf6 willConnectTo\cf4  session: \cf9 UISceneSession\cf4 , \cf6 options\cf4  connectionOptions: \cf9 UIScene\cf4 .\cf9 ConnectionOptions\cf4 ) \{\
-        \cf11 //        guard let _ = (scene as? UIWindowScene) else \{ return \}\cf4 \
-        \
-            
-\f0\b \cf2 guard
-\f1\b0 \cf4  
-\f0\b \cf2 let
-\f1\b0 \cf4  windowScene = (scene 
-\f0\b \cf2 as
-\f1\b0 \cf4 ? \cf9 UIWindowScene\cf4 ) 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{ 
-\f0\b \cf2 return
-\f1\b0 \cf4  \}\
-            \
-            \cf12 window\cf4  = \cf9 UIWindow\cf4 (\cf10 windowScene\cf4 : windowScene)\
-            
-\f0\b \cf2 let
-\f1\b0 \cf4  storyboard = \cf9 UIStoryboard\cf4 (\cf10 name\cf4 : \cf8 "Main"\cf4 , \cf10 bundle\cf4 : 
-\f0\b \cf2 nil
-\f1\b0 \cf4 )\
-            \
-            
-\f0\b \cf2 let
-\f1\b0 \cf4  isLoggedIn = \cf9 UserDefaults\cf4 .\cf10 standard\cf4 .\cf10 bool\cf4 (\cf10 forKey\cf4 : \cf8 "isLoggedIn"\cf4 )\
-            
-\f0\b \cf2 var
-\f1\b0 \cf4  rootVC: \cf9 UIViewController\cf4 \
-        \
+    func updateCredentials(newPlace:String)->Bool{
         
-\f0\b \cf2 let
-\f1\b0 \cf4  pass = \cf7 KeychainManager\cf4 .\cf12 shared\cf4 .\cf12 getCredentials\cf4 ()\
-        \cf10 print\cf4 (pass)\
+        let query:[String:Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
         
-\f0\b \cf2 if
-\f1\b0 \cf4  isLoggedIn, 
-\f0\b \cf2 let
-\f1\b0 \cf4  email = pass.\cf12 email\cf4 \{\
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  homeVC = storyboard.\cf10 instantiateViewController\cf4 (\cf10 withIdentifier\cf4 : \cf8 "homeVC"\cf4 ) 
-\f0\b \cf2 as
-\f1\b0 \cf4 ! \cf7 HomeViewController\cf4 \
-                homeVC.\cf12 email\cf4  = email\
-                rootVC = \cf9 UINavigationController\cf4 (\cf10 rootViewController\cf4 : homeVC)\
-            \} 
-\f0\b \cf2 else
-\f1\b0 \cf4  \{\
-                
-\f0\b \cf2 let
-\f1\b0 \cf4  loginVC = storyboard.\cf10 instantiateViewController\cf4 (\cf10 withIdentifier\cf4 : \cf8 "loginVC"\cf4 ) 
-\f0\b \cf2 as
-\f1\b0 \cf4 ! \cf7 ViewController\cf4 \
-                rootVC = \cf9 UINavigationController\cf4 (\cf10 rootViewController\cf4 : loginVC)\
-            \}\
-            \
-            \cf12 window\cf4 ?.\cf10 rootViewController\cf4  = rootVC\
-            \cf12 window\cf4 ?.\cf10 makeKeyAndVisible\cf4 ()\
-        \}\
-\
-    \
-\
+       let creds = getCredentials()
+        let updatedCreds: [String:String] = [
+            "email": creds.email ?? "",
+            "password": creds.password ?? "",
+            "place": newPlace
+        ]
+        
+        guard let data = try? JSONSerialization.data(withJSONObject: updatedCreds, options: []) else {
+            return false 
+        }
+        
+        let attributesToUpdate: [String: Any] = [
+            kSecValueData as String: data
+        ]
+        
+        let status = SecItemUpdate(query as CFDictionary,attributesToUpdate as CFDictionary)
+        if status == errSecSuccess {
+            return true
+        } else {
+            return false
+        }
+        
+    }
     
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 sceneDidDisconnect\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 ) \{\
-        \cf11 // Called as the scene is being released by the system.\cf4 \
-        \cf11 // This occurs shortly after the scene enters the background, or when its session is discarded.\cf4 \
-        \cf11 // Release any resources associated with this scene that can be re-created the next time the scene connects.\cf4 \
-        \cf11 // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).\cf4 \
-    \}\
-\
     
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 sceneDidBecomeActive\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 ) \{\
-        \cf11 // Called when the scene has moved from an inactive state to an active state.\cf4 \
-        \cf11 // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.\cf4 \
-    \}\
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 sceneWillResignActive\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 ) \{\
-        \cf11 // Called when the scene will move from an active state to an inactive state.\cf4 \
-        \cf11 // This may occur due to temporary interruptions (ex. an incoming phone call).\cf4 \
-    \}\
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 sceneWillEnterForeground\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 ) \{\
-        \cf11 // Called as the scene transitions from the background to the foreground.\cf4 \
-        \cf11 // Use this method to undo the changes made on entering the background.\cf4 \
-    \}\
-\
-    
-\f0\b \cf2 func
-\f1\b0 \cf4  \cf6 sceneDidEnterBackground\cf4 (\cf6 _\cf4  scene: \cf9 UIScene\cf4 ) \{\
-        \cf11 // Called as the scene transitions from the foreground to the background.\cf4 \
-        \cf11 // Use this method to save data, release shared resources, and store enough scene-specific state information\cf4 \
-        \cf11 // to restore the scene back to its current state.\cf4 \
-    \}\
-\
-\
-\}\
-\
 }
+
+
+
+import UIKit
+
+class ViewController: UIViewController {
+    
+    //outlets of text field
+    @IBOutlet weak var emailTextField: UITextField!
+    @IBOutlet weak var passwordTextField: UITextField!
+    
+    // Labels to show email/password validation messages
+    @IBOutlet weak var emailValidationLabel: UILabel!
+    @IBOutlet weak var passwordValidationLabel: UILabel!
+    
+    // Login button
+    @IBOutlet weak var loginButton: UIButton!
+    
+    // other sign-in buttons
+    
+    @IBOutlet weak var appleButton: UIButton!
+    @IBOutlet weak var googleButton: UIButton!
+    @IBOutlet weak var facebookButton: UIButton!
+    
+    // Go to signup page
+    @IBAction func signupBtn(_ sender: Any) {
+        print("Create an account as a new user")
+    }
+    
+    // Forgot password flow
+    @IBAction func forgotBtn(_ sender: Any) {
+        print("Forgot password")
+    }
+    
+    // database of users login
+    let emailDatabase: [String: String] = [
+        "john@gmail.com": "John@123",
+        "alice@example.com": "Alice@123",
+        "priya@gmail.com": "Priya@123",
+        "viji@gmail.com": "v@123"
+    ]
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Clear validation labels initially
+        emailValidationLabel.text = ""
+        passwordValidationLabel.text = ""
+        
+        // Add clear button inside email field
+        emailTextField.clearButtonMode = .whileEditing
+        
+        // Monitor text changes for enabling login button dynamically
+        passwordTextField.addTarget(self, action: #selector(textFieldsChanged), for: .editingChanged)
+        emailTextField.addTarget(self, action: #selector(textFieldsChanged), for: .editingChanged)
+        
+        // Add password eye toggle icon
+        setupPasswordToggle()
+        
+        // Style login button
+        loginButton.layer.cornerRadius = 10
+        
+        // Add shadow effect for other login buttons
+        setupShadow(for: appleButton)
+        setupShadow(for: googleButton)
+        setupShadow(for: facebookButton)
+    }
+    
+    //check fields to enable login button
+    @objc func textFieldsChanged() {
+        let isEmailEmpty = emailTextField.text?.isEmpty ?? true
+        let isPasswordEmpty = passwordTextField.text?.isEmpty ?? true
+        
+        // Enable login button only if both fields are non-empty
+        if !isEmailEmpty && !isPasswordEmpty {
+            loginButton.isEnabled = true
+            loginButton.backgroundColor = .systemBlue
+            loginButton.setTitleColor(.white, for: .normal)
+        }
+    }
+    
+    // email validation fuuction
+    func isValidEmail(_ email: String) -> Bool {
+        let pattern = "^[^0-9.][A-Za-z0-9._%+-]{0,49}@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: email)
+    }
+    
+    // Add eye icon for toggle password visibility
+    func setupPasswordToggle() {
+        let toggleButton = UIButton(type: .custom)
+        toggleButton.setImage(UIImage(systemName: "eye.slash"), for: .normal)
+        toggleButton.tintColor = .gray
+        toggleButton.addTarget(self, action: #selector(togglePasswordVisibility(_:)), for: .touchUpInside)
+        
+        passwordTextField.rightView = toggleButton
+        passwordTextField.rightViewMode = .always
+        passwordTextField.isSecureTextEntry = true
+    }
+    
+    // Toggle between secure text entry and plain text
+    @objc func togglePasswordVisibility(_ sender: UIButton) {
+        passwordTextField.isSecureTextEntry.toggle()
+        let iconName = passwordTextField.isSecureTextEntry ? "eye.slash" : "eye"
+        sender.setImage(UIImage(systemName: iconName), for: .normal)
+    }
+    
+    //add shadows to button
+    func setupShadow(for button: UIButton) {
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.2
+        button.layer.shadowOffset = CGSize(width: 0, height: 0)
+        button.layer.shadowRadius = 5
+        button.translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    //login button logic
+    @IBAction func loginBtnPressed(_ sender: UIButton) {
+        guard let email = emailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let password = passwordTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+
+        if !isValidEmail(email) {
+            emailValidationLabel.text = "Invalid Email"
+            emailValidationLabel.textColor = .systemRed
+            return
+        }
+
+        if let savedPassword = emailDatabase[email] {
+            if savedPassword == password {
+                // Save email in Keychain
+                
+                let save_mail = KeychainManager.shared.saveCredentials(email: email, password: password, place: nil)
+                print(save_mail)
+             
+                let pass = KeychainManager.shared.getCredentials()
+                print("login check ",pass)
+                // Save login state
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                
+                // Navigate to Home
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                let homeVC = storyboard.instantiateViewController(withIdentifier: "homeVC") as! HomeViewController
+                homeVC.email = email
+                navigationController?.setViewControllers([homeVC], animated: true)
+            } else {
+                passwordValidationLabel.text = "Incorrect password"
+                passwordValidationLabel.textColor = .systemRed
+            }
+        } else {
+            passwordValidationLabel.text = "Email not found"
+            passwordValidationLabel.textColor = .systemRed
+        }
+    }
+
+   
+    
+}
+
+
+
+
+
+import UIKit
+
+class HomeViewController: UIViewController, URLSessionDataDelegate {
+    
+    @IBOutlet weak var emailLabel: UILabel!
+    @IBOutlet weak var contentView: UIView!
+    @IBOutlet weak var place: UITextField!
+    
+    var email: String?
+    let imageView = UIImageView()
+    var aspectRatioConstraint: NSLayoutConstraint?
+    
+    // This will store the downloaded data
+    var receivedData = Data()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        emailLabel.text = email
+        let credentials = KeychainManager.shared.getCredentials()
+        place.text = credentials.place
+        
+        // Setup UIImageView
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .yellow
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Add imageView inside the scroll view’s contentView
+        contentView.addSubview(imageView)
+        
+        // Auto Layout constraints
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: place.bottomAnchor, constant: 20),
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            //imageView.heightAnchor.constraint(equalToConstant: 200)
+        ])
+        
+        // Add Logout button on right
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Logout",
+            style: .plain,
+            target: self,
+            action: #selector(logoutTapped)
+        )
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "Update place",
+            style: .plain,
+            target: self,
+            action: #selector(updatePassword)
+        )
+        fetchImage()
+    }
+    @objc func updatePassword(){
+        guard let newPlace = place.text, !newPlace.isEmpty  else { print("enter some place"); return }
+        
+        let success = KeychainManager.shared.updateCredentials(newPlace: newPlace)
+        if success {
+            print("Place updated successfully!")
+        } else {
+            print("Failed to update place.")
+        }
+    }
+    @objc func logoutTapped() {
+            // Delete email from Keychain
+            KeychainManager.shared.deleteCredentials()
+            
+            // Update login state
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+
+            // Go back to login screen
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            let loginVC = storyboard.instantiateViewController(withIdentifier: "loginVC") as! ViewController
+            let nav = UINavigationController(rootViewController: loginVC)
+
+            // Use the active window scene
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController = nav
+                window.makeKeyAndVisible()
+            }
+
+        }
+
+    
+    func fetchImage() {
+        let url = URL(string: "https://i.pinimg.com/originals/42/90/74/42907405f16ba768786a616095a8cfb2.jpg")!
+        
+        // Create a URLSession with self as delegate
+        let sessionConfig = URLSessionConfiguration.default
+        let session = URLSession(configuration: sessionConfig, delegate: self, delegateQueue: nil)
+        
+        // Create a data task
+        let task = session.dataTask(with: url)
+        task.resume()
+    }
+    
+    
+    // Called when server responds
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        print("Server responding")
+        receivedData = Data() // reset for new response
+        completionHandler(.allow) // proceed with receiving data
+    }
+    
+    // Called each time new chunk of data arrives
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        //        print("*******************************")
+        //        print("data:\(data)")
+        //        print("*******************************")
+        //        print("device recieve data")
+        receivedData.append(data)
+    }
+    
+    // Called when the task finishes
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("Error:", error)
+            return
+        }
+        
+        // Convert received data to UIImage
+        if let image = UIImage(data: receivedData) {
+            print("all data received successfully")
+            DispatchQueue.main.async {
+                self.setImage(image)
+            }
+        }
+    }
+    
+    func setImage(_ image: UIImage) {
+        imageView.image = image
+        
+        //Remove old aspect ratio constraint if any
+        if let oldConstraint = aspectRatioConstraint {
+            imageView.removeConstraint(oldConstraint)
+        }
+        
+        let aspectRatio = image.size.height / image.size.width
+        aspectRatioConstraint = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: aspectRatio)
+        //aspectRatioConstraint?.priority = .defaultHigh
+        aspectRatioConstraint?.isActive = true
+    }
+    
+}
+
+
+
+
+
+import UIKit
+
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
+    var window: UIWindow?
+
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        //        guard let _ = (scene as? UIWindowScene) else { return }
+        
+            guard let windowScene = (scene as? UIWindowScene) else { return }
+            
+            window = UIWindow(windowScene: windowScene)
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            
+            let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+            var rootVC: UIViewController
+        
+        let pass = KeychainManager.shared.getCredentials()
+        print(pass)
+        if isLoggedIn, let email = pass.email{
+                let homeVC = storyboard.instantiateViewController(withIdentifier: "homeVC") as! HomeViewController
+                homeVC.email = email
+                rootVC = UINavigationController(rootViewController: homeVC)
+            } else {
+                let loginVC = storyboard.instantiateViewController(withIdentifier: "loginVC") as! ViewController
+                rootVC = UINavigationController(rootViewController: loginVC)
+            }
+            
+            window?.rootViewController = rootVC
+            window?.makeKeyAndVisible()
+        }
+
+    
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+        // Called as the scene is being released by the system.
+        // This occurs shortly after the scene enters the background, or when its session is discarded.
+        // Release any resources associated with this scene that can be re-created the next time the scene connects.
+        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        // Called when the scene has moved from an inactive state to an active state.
+        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        // Called when the scene will move from an active state to an inactive state.
+        // This may occur due to temporary interruptions (ex. an incoming phone call).
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        // Called as the scene transitions from the background to the foreground.
+        // Use this method to undo the changes made on entering the background.
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        // Called as the scene transitions from the foreground to the background.
+        // Use this method to save data, release shared resources, and store enough scene-specific state information
+        // to restore the scene back to its current state.
+    }
+
+
+}
+
