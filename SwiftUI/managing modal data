@@ -1,0 +1,185 @@
+//Views dependency to the property
+
+import SwiftUI
+import Combine
+
+class Book: ObservableObject, Identifiable {
+    let id = UUID()
+    @Published var title: String
+    
+    init(title: String) {
+        self.title = title
+    }
+}
+
+struct BookView: View {
+    @ObservedObject var book: Book
+    
+    var body: some View {
+        print("bookview")
+        return Text(book.title)
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.yellow.opacity(0.3))
+            .cornerRadius(8)
+    }
+}
+
+struct LibraryItemView: View {
+    var book: Book
+    
+    var body: some View {
+        print("view item")
+        return VStack {
+            // This view does NOT read book.title, just passes it down
+            BookView(book: book)
+        }
+        .padding()
+        .background(Color.blue.opacity(0.2)) // To visualize this view
+        .cornerRadius(10)
+    }
+}
+
+struct LibraryView: View {
+    @State private var books = [
+        Book(title: "SwiftUI Basics"),
+        Book(title: "Combine Framework"),
+        Book(title: "iOS Development")
+    ]
+    
+    var body: some View {
+        print("library view")
+        return VStack(spacing: 20) {
+            List {
+                ForEach(books) { book in
+                    LibraryItemView(book: book)
+                }
+            }
+            
+            Button(action: {
+                // Update the title of the first book
+                books[0].title = "SwiftUI Advanced"
+            }) {
+                Text("Update First Book Title")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            .padding()
+        }
+    }
+}
+
+
+
+Action
+What happens?
+Tap Change Book Reference
+book points to a new Book object → SwiftUI recomputes BookView → view updates 
+Tap Change Title Only
+book.title changes but object reference is same → BookView does NOT update 
+
+	1	Reference change triggers a view update, even if the object is not observable.
+	2	Internal property changes do NOT trigger updates unless the property is observable (@Published) and the view observes it (@ObservedObject).
+	3	This distinction explains why sometimes views don’t update when you mutate a class property directly—SwiftUI only sees the same object reference.
+
+Without observable object
+
+import SwiftUI
+
+// Reference type (class)
+class Book {
+    var title: String
+    
+    init(title: String) {
+        self.title = title
+    }
+}
+
+// View that stores a reference
+struct BookView: View {
+    var book: Book // Not @ObservedObject
+    
+    var body: some View {
+        print("bookview")
+        return Text(book.title)
+            .padding()
+            .background(Color.yellow.opacity(0.3))
+            .cornerRadius(8)
+    }
+}
+
+// Parent view
+struct ContentView: View {
+    @State private var book = Book(title: "Original Book")
+    
+    var body: some View {
+        print("1")
+        return VStack(spacing: 20) {
+            BookView(book: book) // Displays book.title
+            
+            Button("Change Book Reference") {
+                // Create a new Book object and assign to the variable
+                book = Book(title: "New Book Reference")
+            }
+            
+            Button("Change Title Only") {
+                // Change property of the same object
+                book.title = "Updated Title"
+            }
+        }
+        .padding()
+    }
+}
+
+With observable object 
+
+import SwiftUI
+
+// Reference type (class)
+class Book:ObservableObject {
+    @Published var title: String
+    
+    init(title: String) {
+        self.title = title
+    }
+}
+
+// View that stores a reference
+struct BookView: View {
+    @ObservedObject var book: Book // Not @ObservedObject
+    
+    var body: some View {
+        print("bookview")
+        return Text(book.title)
+            .padding()
+            .background(Color.yellow.opacity(0.3))
+            .cornerRadius(8)
+    }
+}
+
+// Parent view
+struct ContentView: View {
+    @State private var book = Book(title: "Original Book")
+    
+    var body: some View {
+        print("1")
+        return VStack(spacing: 20) {
+            BookView(book: book) // Displays book.title
+            
+            Button("Change Book Reference") {
+                // Create a new Book object and assign to the variable
+                book = Book(title: "New Book Reference")
+            }
+            
+            Button("Change Title Only") {
+                // Change property of the same object
+                book.title = "Updated Title"
+            }
+        }
+        .padding()
+    }
+}
+
