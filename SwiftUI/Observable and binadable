@@ -1,0 +1,243 @@
+//OBSERVABLE
+
+1)THROUGH BINDING
+import SwiftUI
+import Observation
+@Observable
+class Book{
+    var title = "India"
+    var isAvailable = true
+}
+
+struct ContentView: View  {
+    @Binding var title: String
+    @Binding var isAvailable: Bool
+    @Environment(\.dismiss) var dismiss
+    var body: some View {
+        print("re renders")
+        
+        return Form{
+            TextField("Title", text: $title)
+            Toggle("Available", isOn: $isAvailable)
+            Button("close"){
+                dismiss()
+            }
+        }
+    }
+}
+
+import SwiftUI
+
+@main
+struct bindableApp: App {
+    @State var book = Book()
+    var body: some Scene {
+        WindowGroup {
+            ContentView(title: $book.title, isAvailable: $book.isAvailable)
+        }
+    }
+}
+
+// 2) THROUGH BINDABLE
+import SwiftUI
+import Observation
+@Observable
+class Book{
+    var title = "India"
+    var isAvailable = true
+}
+
+struct ContentView: View {
+    @Bindable var book:Book
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        return Form{
+            TextField("Title", text: $book.title)
+            Toggle("Available", isOn: $book.isAvailable)
+            Button("close"){
+                dismiss()
+            }
+        }
+    }
+}
+
+
+#Preview {
+    ContentView(book: Book())
+}
+import SwiftUI
+
+@main
+struct bindableApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView(book:Book())
+        }
+    }
+}
+
+3)USING ENVIRONMENT VALUE 
+import SwiftUI
+import Observation
+@Observable
+class Book{
+    var title = "India"
+    var isAvailable = true
+}
+
+struct ContentView: View {
+    @Environment(Book.self) private var book1   // Injected from environment
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        Form{
+            @Bindable var book = book1
+            TextField("Title", text: $book.title)
+            Toggle("Available", isOn: $book.isAvailable)
+            Button("close"){
+                dismiss()
+            }
+        }
+    }
+}
+
+
+#Preview {
+    ContentView()
+        .environment(Book())
+}
+import SwiftUI
+
+@main
+struct bindableApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environment(Book())
+        }
+    }
+}
+
+
+4)USING IDENTIFIABLE PROTOCOL
+
+import SwiftUI
+import Observation
+
+@Observable
+class Book {
+    var id = UUID()
+    var title: String
+    init(title: String = "Untitled Book") {
+        self.title = title
+    }
+}
+
+struct LibraryView: View {
+    @State private var books = [Book(title: "Swift"), Book(title: "iOS Development")]
+
+    var body: some View {
+        NavigationStack {
+            // List with id: \.self to identify each book by reference
+            List(books, id: \.id) { book in
+                @Bindable var book = book  // create local binding
+                TextField("Title", text: $book.title)
+            }
+            .navigationTitle("My Library")
+        }
+    }
+}
+
+struct Example2_Preview: PreviewProvider {
+    static var previews: some View {
+        LibraryView()
+    }
+}
+
+import SwiftUI
+import Observation
+
+@Observable
+class Book: Identifiable {
+    
+    var title: String
+    init(title: String = "Untitled Book") {
+        self.title = title
+    }
+}
+
+struct LibraryView: View {
+    @State private var books = [Book(title: "Swift"), Book(title: "iOS Development")]
+    
+    var body: some View {
+        NavigationStack {
+            List(books) { book in
+                @Bindable var book = book   // create local binding
+                TextField("Title", text: $book.title)
+            }
+            .navigationTitle("My Library")
+        }
+    }
+}
+
+struct Example2_Preview: PreviewProvider {
+    static var previews: some View {
+        LibraryView()
+    }
+}
+
+
+
+INSIDE OF OBSERVABLE
+
+1)@Observable
+class Book {
+    static var category = "Education"  // not observable
+}
+2)@Observable
+class Book {
+    var title = "SwiftUI"
+    
+    @ObservationIgnored
+    var cache = [String: Any]()   // changes here don’t trigger re-renders
+}
+3)@Observable
+class Book {
+    var subtitle: String? = nil
+}
+4)
+@Observable
+class Book {
+    var title = "SwiftUI"
+    var isAvailable = true
+    
+    var status: String {
+        isAvailable ? "Available" : "Not available"
+    }
+} U CANT DIRECTLY BIND TO STATUS
+
+class Author {
+    var name = "Priya"
+}
+
+@Observable
+class Book {
+    var author = Author()   // changes to author.name won't trigger updates
+}
+
+6)@Observable
+class Book {
+    var title = "SwiftUI"
+}
+
+@Observable
+class Library {
+    var books = [Book(), Book()]
+}
+
+7)Strings, Bools, Ints, Doubles, Arrays, Dictionaries, Structs…
+
+ENVIRONMENT 
+@Environment is a property wrapper that lets your view read values provided by the SwiftUI environment.
+Think of the environment as a shared dictionary of values (like theme, color scheme, dismiss action, locale, dynamic type size, etc.) that SwiftUI automatically passes down through the view hierarchy.
