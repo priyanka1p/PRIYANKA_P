@@ -1,0 +1,52 @@
+A Binding in SwiftUI always points to some data stored elsewhere.
+	•	Most commonly, that source of truth is a @State property in a parent view.
+	•	But it doesn’t have to be @State — it just needs to be a mutable value that you can create a binding to.
+____________________________________
+
+struct ContentView: View {
+    var name = "Priya"
+
+    var body: some View {
+        let nameBinding = Binding(
+            get: { name },
+            set: { newValue in
+                print("New value: \(newValue)")
+            }
+        )
+        TextField("Name", text: nameBinding)
+    }
+}
+
+__________________________________________________
+struct ParentView: View {
+    @State private var isPlaying = false
+
+    var body: some View {
+        PlayButton(isPlaying: $isPlaying) // binding from @State
+    }
+}
+
+struct PlayButton: View {
+    @Binding var isPlaying: Bool
+
+    var body: some View {
+        Button(isPlaying ? "Pause" : "Play") {
+            isPlaying.toggle()  // updates parent’s state
+        }
+    }
+}
+_________________________________________
+
+@Observable
+class Book {
+    var title = "SwiftUI"
+}
+
+struct BookView: View {
+    @Bindable var book: Book
+
+    var body: some View {
+        TextField("Title", text: $book.title) // binding from @Bindable
+    }
+}
+ 
