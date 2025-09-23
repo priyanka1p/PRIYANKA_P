@@ -1,0 +1,45 @@
+STATE ALLOWS TO INITIIAZE MANY TIMES AND REASSIGNS WHEREAS STATEOBJECT CANNOT.
+
+import SwiftUI
+
+class Book:ObservableObject {
+    var title: String
+    init(title: String) {
+        self.title = title
+    }
+}
+
+struct BookView: View {
+    @ObservedObject var book: Book 
+    
+    var body: some View {
+        print("bookview")
+        return Text(book.title)
+            .padding()
+            .background(Color.yellow.opacity(0.3))
+            .cornerRadius(8)
+    }
+}
+
+// Parent view
+struct ContentView: View {
+    @State private var book = Book(title: "Original Book")
+    
+    var body: some View {
+        print("1")
+        return VStack(spacing: 20) {
+            BookView(book: book) // Displays book.title
+            
+            Button("Change Book Reference") {
+                // Create a new Book object and assign to the variable. it works
+                book = Book(title: "New Book Reference")
+            }
+            
+            Button("Change Title Only") {
+                // Change property of the same object but does not change as the property is not published.
+                book.title = "Updated Title"
+            }
+        }
+        .padding()
+    }
+}
