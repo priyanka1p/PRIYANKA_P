@@ -1,0 +1,79 @@
+
+import SwiftUI
+
+
+struct content:View{
+    let colors: [Color] = [.purple, .pink, .orange]
+    let color_contrast :[Color] = [.black, .white, .gray]
+    @State private var selection: Color? = nil
+    @State private var selection2:Color? = nil
+    @State private var columnVisibility =
+    NavigationSplitViewVisibility.doubleColumn
+    @State private var preferredColumn = NavigationSplitViewColumn.sidebar
+
+
+    var body: some View {
+         NavigationSplitView(columnVisibility: $columnVisibility, preferredCompactColumn: $preferredColumn) {
+            List(colors, id: \.self, selection: $selection) { color in
+                NavigationLink(color.description, value: color)
+            }
+            //.navigationSplitViewColumnWidth(200)
+
+        } content: {
+            if let color_con = selection {
+                Text("second container \(color_con.description)")
+                List(selection:$selection2){
+                    NavigationLink("Black",value:Color.black)
+                    NavigationLink("Gray",value:Color.gray)
+                }
+                //.navigationSplitViewColumnWidth(min: 130,ideal: 200, max:250)
+            }
+            else{
+                Text("pick first color")
+
+            }
+
+        }
+        detail: {
+
+            if let color = selection2 {
+                Text("First color:\(color.description)")
+                ColorDetail(color: color)
+            } else {
+                Text("Pick colors")
+            }
+            if let color = selection{
+                ZStack(alignment: .topLeading){
+                    ColorDetail(color: color)
+                    Text("second color:\(color.description)")
+                        .bold()
+                        .font(.system(size: 39))
+                        .padding()
+                    
+                }
+            }
+
+        }        //.navigationSplitViewStyle(.automatic)
+
+
+    }
+}
+struct ColorDetail: View {
+    let color: Color
+    
+    var body: some View {
+        ZStack {
+            color.ignoresSafeArea()
+            Text("This is \(color.description.capitalized)")
+                .font(.largeTitle)
+                .foregroundColor(.white)
+                .bold()
+        }
+    }
+}
+#Preview {
+    content()
+}
+
+
+
